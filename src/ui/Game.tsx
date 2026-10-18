@@ -23,6 +23,7 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
   const [accusing, setAccusing] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [copied, setCopied] = useState(false);
 
   const solution = useMemo(() => solve(p, { limit: 1 })[0], [p]);
   const bad = useMemo(() => new Set(violations(p, board.placements as Placement)), [p, board.placements]);
@@ -111,104 +112,121 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
   return (
     <section className="game">
       <header className="game-head">
-        <button className="ghost" onClick={onExit}>
-          ← Casos
+        <button className="ghost back" onClick={onExit} aria-label="Volver a los casos">
+          ←<span className="hide-sm"> Casos</span>
         </button>
         <div className="title">
+          <span className="eyebrow">Expediente · {p.size}×{p.size}</span>
           <h2>{p.title}</h2>
-          <span className="meta">
-            {p.size}×{p.size} · dificultad {'●'.repeat(p.difficulty)}
-            {'○'.repeat(5 - p.difficulty)}
-          </span>
         </div>
         <div className="timer" aria-label="Tiempo">
-          ⏱ {formatTime(seconds)}
+          {formatTime(seconds)}
         </div>
       </header>
 
       <p className="story">{p.story}</p>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="msg error">{error}</p>}
+      {hint && (
+        <p className="msg hint-msg" role="status">
+          💡 {hint.text}
+        </p>
+      )}
+      {result && !result.correct && (
+        <p className="msg error" role="status">
+          No es correcto. Revisá las pistas e intentá de nuevo (errores: {result.wrongSubmits}).
+        </p>
+      )}
 
-      <div className="toolbar" role="toolbar">
-        <div className="segmented">
-          <button className={mode === 'place' ? 'on' : ''} onClick={() => setMode('place')}>
-            👤 Colocar
+      <div className="toolbar" role="toolbar" aria-label="Herramientas">
+        <div className="segmented" role="group" aria-label="Modo">
+          <button aria-pressed={mode === 'place'} onClick={() => setMode('place')}>
+            <span aria-hidden>👤</span> Colocar
           </button>
-          <button className={mode === 'mark' ? 'on' : ''} onClick={() => setMode('mark')}>
-            ✗ Marcar
+          <button aria-pressed={mode === 'mark'} onClick={() => setMode('mark')}>
+            <svg className="ico" aria-hidden>
+              <use href="#mark-x" />
+            </svg>{' '}
+            Marcar
           </button>
         </div>
         <button onClick={game.undo} disabled={!game.canUndo} title="Deshacer (Ctrl+Z)">
-          ↶
+          <span aria-hidden>↶</span> <span className="tool-label">Deshacer</span>
         </button>
-        <button onClick={game.redo} disabled={!game.canRedo} title="Rehacer (Ctrl+Shift+Z)">
-          ↷
+        <button className="desktop-only" onClick={game.redo} disabled={!game.canRedo} title="Rehacer (Ctrl+Shift+Z)">
+          <span aria-hidden>↷</span> Rehacer
         </button>
-        <button onClick={game.clear} disabled={!!solved}>
+        <button className="desktop-only" onClick={game.clear} disabled={!!solved}>
           Borrar todo
         </button>
         <button onClick={askHint} disabled={!!solved}>
-          💡 Ayuda {attempt?.hintsUsed ? `(${attempt.hintsUsed})` : ''}
+          <span aria-hidden>💡</span> <span className="tool-label">Ayuda{attempt?.hintsUsed ? ` (${attempt.hintsUsed})` : ''}</span>
         </button>
-        <button className="primary" onClick={() => setAccusing(true)} disabled={!complete || !!solved}>
-          🔎 Acusar
+        <button className="danger" onClick={() => setAccusing(true)} disabled={!complete || !!solved}>
+          <span aria-hidden>🔎</span> <span className="tool-label">Acusar</span>
         </button>
       </div>
 
-      {hint && <p className="hint-msg">💡 {hint.text}</p>}
-      {result && !result.correct && (
-        <p className="error">No es correcto. Revisá las pistas e intentá de nuevo (errores: {result.wrongSubmits}).</p>
+      <div className="game-body">
+        <BoardView
+          puzzle={p}
+          board={board}
+          bad={bad}
+          highlight={new Set((hint?.cells ?? []).map(cellKey))}
+          selected={selected}
+          onCell={onCell}
+        />
+
+        <div className="people-col">
+          <h3 className="eyebrow">
+            Personas · {placedCount}/{p.people.length} en el plano
+          </h3>
+          <ol className="people">
+            {p.people.map((x, i) => {
+              const at = board.placements[x.id];
+              return (
+                <li
+                  key={x.id}
+                  className={['person', x.role, selected === x.id && 'selected', at && 'placed', bad.has(x.id) && 'bad'].filter(Boolean).join(' ')}
+                >
+                  <button onClick={() => setSelected(x.id)} aria-pressed={selected === x.id}>
+                    <span className="avatar">{x.avatar}</span>
+                    <span className="who">
+                      <span className="name">
+                        <kbd>{i + 1}</kbd> {x.name}
+                        {x.role === 'victim' && <span className="tag danger">Víctima</span>}
+                      </span>
+                      <span className="clue">{clueText(p, x)}</span>
+                      <span className={`chip ${bad.has(x.id) ? 'danger' : at ? 'success' : ''}`}>
+                        {bad.has(x.id) ? 'No cumple su pista' : at ? `En el plano · ${colLabel(at.c)}${at.r + 1}` : 'Sin ubicar'}
+                      </span>
+                    </span>
+                  </button>
+                  {at && !solved && (
+                    <button className="ghost remove" onClick={() => game.remove(x.id)} aria-label={`Quitar a ${x.name} del plano`}>
+                      ×
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+
+          <details className="rules">
+            <summary>Cómo se juega</summary>
+            <ul>
+              <li>Ubicá a cada persona en el plano: una sola por fila y una sola por columna.</li>
+              <li>Nadie puede estar sobre muebles que ocupan la casilla (mesas, estantes, plantas, TV, racks, equipaje). Sí sobre sillas, camas y alfombras.</li>
+              <li>"Junto a" significa en una casilla vecina hacia arriba, abajo, izquierda o derecha. "Más al norte" significa en una fila más arriba.</li>
+              <li>El asesino es el único sospechoso que quedó a solas con la víctima en la misma habitación.</li>
+              <li>Atajos: números para elegir persona, X para marcar, flechas para moverte por el plano, clic derecho o Shift+clic marca una casilla, Ctrl+Z deshace.</li>
+            </ul>
+          </details>
+        </div>
+      </div>
+
+      {accusing && (
+        <div className="overlay" onClick={() => setAccusing(false)} />
       )}
-
-      <BoardView
-        puzzle={p}
-        board={board}
-        bad={bad}
-        highlight={new Set((hint?.cells ?? []).map(cellKey))}
-        selected={selected}
-        onCell={onCell}
-      />
-
-      <ol className="people">
-        {p.people.map((x, i) => {
-          const at = board.placements[x.id];
-          return (
-            <li
-              key={x.id}
-              className={['person', x.role, selected === x.id && 'selected', at && 'placed', bad.has(x.id) && 'bad'].filter(Boolean).join(' ')}
-            >
-              <button onClick={() => setSelected(x.id)} aria-pressed={selected === x.id}>
-                <span className="avatar">{x.avatar}</span>
-                <span className="who">
-                  <strong>
-                    <kbd>{i + 1}</kbd> {x.name}
-                  </strong>
-                  {x.role === 'victim' && <em> · víctima</em>}
-                  <span className="clue">{clueText(p, x)}</span>
-                </span>
-                <span className="status">{at ? `${colLabel(at.c)}${at.r + 1}` : '—'}</span>
-              </button>
-              {at && !solved && (
-                <button className="ghost remove" onClick={() => game.remove(x.id)} aria-label={`Quitar a ${x.name}`}>
-                  ×
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-
-      <details className="rules">
-        <summary>Cómo se juega</summary>
-        <ul>
-          <li>Ubicá a cada persona en el plano: una sola por fila y una sola por columna.</li>
-          <li>Nadie puede estar sobre muebles que ocupan la casilla (mesas, estantes, plantas, TV, racks, equipaje). Sí sobre sillas, camas y alfombras.</li>
-          <li>"Junto a" significa en una casilla vecina hacia arriba, abajo, izquierda o derecha. "Más al norte" significa en una fila más arriba.</li>
-          <li>El asesino es el único sospechoso que quedó a solas con la víctima en la misma habitación.</li>
-          <li>Atajos: números para elegir persona, X para marcar, clic derecho o Shift+clic marca una casilla, Ctrl+Z deshace.</li>
-        </ul>
-      </details>
-
       {accusing && (
         <dialog open className="modal" aria-label="Acusar">
           <h3>¿Quién lo hizo?</h3>
@@ -216,7 +234,7 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
             {p.people
               .filter((x) => x.role === 'suspect')
               .map((x) => (
-                <button key={x.id} onClick={() => accuse(x.id)}>
+                <button key={x.id} className="suspect" onClick={() => accuse(x.id)}>
                   <span className="avatar">{x.avatar}</span> {x.name}
                 </button>
               ))}
@@ -228,21 +246,43 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
       )}
 
       {result?.correct && (
+        <div className="overlay" />
+      )}
+      {result?.correct && (
         <dialog open className="modal solved" aria-label="Caso resuelto">
-          <h3>¡Caso resuelto!</h3>
+          <span className="stamp">Caso cerrado</span>
+          <h3>¡Lo resolviste!</h3>
           <p>{(p.epilogue ?? '{killer} fue quien lo hizo.').replace('{killer}', killerName(result.killer))}</p>
-          <p className="stats">
-            ⏱ {formatTime(result.seconds ?? 0)} · 💡 {attempt?.hintsUsed ?? 0} · ✗ {result.wrongSubmits} · <strong>{result.score} pts</strong>
-          </p>
+          <dl className="stats">
+            <div>
+              <dt>Tiempo</dt>
+              <dd>{formatTime(result.seconds ?? 0)}</dd>
+            </div>
+            <div>
+              <dt>Ayudas</dt>
+              <dd>{attempt?.hintsUsed ?? 0}</dd>
+            </div>
+            <div>
+              <dt>Errores</dt>
+              <dd>{result.wrongSubmits}</dd>
+            </div>
+            <div className="score">
+              <dt>Puntos</dt>
+              <dd>{result.score}</dd>
+            </div>
+          </dl>
           <div className="row">
             <button
               onClick={() =>
-                navigator.clipboard?.writeText(shareText(p, result.seconds ?? 0, attempt?.hintsUsed ?? 0, result.wrongSubmits))
+                navigator.clipboard
+                  ?.writeText(shareText(p, result.seconds ?? 0, attempt?.hintsUsed ?? 0, result.wrongSubmits))
+                  .then(() => setCopied(true))
+                  .catch(() => {})
               }
             >
-              📋 Copiar resultado
+              {copied ? '✓ Copiado' : '📋 Copiar resultado'}
             </button>
-            <button className="primary" onClick={onExit}>
+            <button className="primary accent" onClick={onExit}>
               Otro caso
             </button>
           </div>

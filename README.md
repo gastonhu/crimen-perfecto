@@ -9,7 +9,8 @@ marcador público.
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173 (sin .env funciona en "modo local": marcador en el navegador)
+npm run dev        # http://localhost:5173 (con .env usa Supabase; sin .env, "modo local")
+npm run dev:local  # fuerza el modo local aunque haya .env (para probar sin tocar la base real)
 npm test           # tests del motor (solver, pistas, ayudas)
 npm run validate   # todos los casos: solución única, un solo culpable, dificultad estimada
 ```

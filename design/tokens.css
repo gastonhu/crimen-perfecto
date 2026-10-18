@@ -1,0 +1,232 @@
+/* ==========================================================================
+   Crimen Perfecto — design tokens
+   Estética: expediente noir. Papel gris cálido de día, tinta y luz de lámpara
+   de noche. Un solo acento (ámbar "lámpara") y un rojo reservado para la
+   víctima, Acusar y los errores.
+
+   Uso: importar una vez en la entrada de la app (p. ej. src/main.tsx).
+   Modo: sigue al sistema por defecto. Para forzar uno, poné
+   data-theme="light" | "dark" en <html>.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+:root {
+  color-scheme: light;
+
+  /* --- Superficies ------------------------------------------------------ */
+  --cp-bg: #efede8;            /* fondo de página */
+  --cp-surface: #faf9f6;       /* tarjetas, paneles, diálogos */
+  --cp-surface-2: #e6e3dc;     /* hundido: segmentados, chips neutros, filas pares */
+  --cp-overlay: rgba(18, 19, 23, 0.55); /* detrás de modales y drawer */
+  --cp-border: #cfcac0;        /* bordes de tarjetas e inputs */
+  --cp-border-strong: #2a2b30; /* bordes enfáticos */
+
+  /* --- Texto ------------------------------------------------------------ */
+  --cp-text: #1b1c20;          /* principal  (16:1 sobre surface) */
+  --cp-text-muted: #55534e;    /* secundario (7.3:1 sobre surface) */
+  --cp-text-faint: #67645d;    /* rótulos y coordenadas (≥4.9:1 sobre bg) */
+
+  /* --- Acento: luz de lámpara ------------------------------------------- */
+  --cp-accent: #c98a1b;        /* relleno: herramienta activa, casilla elegida */
+  --cp-on-accent: #1b1c20;     /* texto sobre --cp-accent (5.8:1) */
+  --cp-accent-text: #8a5a00;   /* acento usado como texto o ícono (5.6:1) */
+  --cp-accent-soft: #f3e2bf;   /* fondo suave: fila propia en el ranking */
+  --cp-focus: #1d4ed8;         /* anillo de foco de teclado */
+
+  /* --- Estados ---------------------------------------------------------- */
+  --cp-danger: #a3201c;        /* relleno: Acusar, ficha de víctima, error */
+  --cp-on-danger: #ffffff;     /* 7.5:1 */
+  --cp-danger-text: #a3201c;
+  --cp-danger-soft: #f6dad6;
+  --cp-success: #1e6b41;       /* relleno: confirmaciones */
+  --cp-on-success: #ffffff;
+  --cp-success-text: #1e6b41;  /* "Ubicada", "Resuelto" (6.4:1) */
+  --cp-success-soft: #d5ebdd;
+
+  /* --- Plano ------------------------------------------------------------ */
+  --cp-wall: #2a2b30;          /* pared entre habitaciones y borde exterior */
+  --cp-wall-w: 3px;
+  --cp-grid-line: rgba(30, 30, 35, 0.2); /* línea fina entre casillas */
+  --cp-grid-w: 1px;
+  --cp-room-ink: #1b1c20;      /* texto sobre cualquier --cp-room-* */
+  --cp-obj-block: #3d3b37;     /* ícono de mueble que bloquea */
+  --cp-obj-free: #67645d;      /* ícono de mueble transitable */
+  --cp-mark: #5e5b55;          /* la ✗ */
+  --cp-hatch: repeating-linear-gradient(45deg, rgba(27, 28, 32, 0.13) 0 2px, transparent 2px 7px);
+  --cp-dim: rgba(239, 237, 232, 0.62); /* velo sobre habitaciones fuera de foco */
+
+  /* Habitaciones: 8 tintes para fondo de casilla. Se asignan en orden de
+     aparición en `rooms` (primera letra → room-1, etc.). Todos dan ≥10:1
+     con --cp-room-ink. La pared gruesa separa habitaciones; el color ayuda,
+     no es la única señal. */
+  --cp-room-1: #f2d7c9; /* terracota */
+  --cp-room-2: #d6e4d2; /* salvia */
+  --cp-room-3: #d3ddee; /* acero */
+  --cp-room-4: #eee2b8; /* mostaza */
+  --cp-room-5: #e3d4ea; /* lavanda */
+  --cp-room-6: #cfe6e4; /* agua */
+  --cp-room-7: #ebd0d6; /* rosa viejo */
+  --cp-room-8: #ddd8cc; /* piedra */
+
+  /* --- Forma ------------------------------------------------------------ */
+  --cp-radius-sm: 4px;   /* chips, badges, casillas en miniatura */
+  --cp-radius-md: 8px;   /* botones, inputs, tarjetas de personaje */
+  --cp-radius-lg: 14px;  /* paneles, tarjetas de caso, diálogos */
+  --cp-radius-pill: 999px;
+
+  --cp-shadow-1: 0 1px 2px rgba(20, 18, 14, 0.08), 0 1px 1px rgba(20, 18, 14, 0.04);
+  --cp-shadow-2: 0 8px 20px -8px rgba(20, 18, 14, 0.22);
+  --cp-shadow-3: 0 24px 60px -12px rgba(20, 18, 14, 0.38);
+
+  /* --- Tipografía ------------------------------------------------------- */
+  --cp-font-display: 'Big Shoulders Display', 'Arial Narrow', sans-serif; /* títulos, sellos */
+  --cp-font-body: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;  /* todo lo demás */
+  --cp-font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;        /* cronómetro, puntos, coordenadas */
+
+  --cp-text-xs: 12px;
+  --cp-text-sm: 14px;
+  --cp-text-md: 16px;
+  --cp-text-lg: 20px;
+  --cp-text-xl: 28px;
+  --cp-text-2xl: 44px;
+  --cp-text-3xl: 64px;
+  --cp-leading-tight: 1.1;
+  --cp-leading-body: 1.5;
+  --cp-tracking-caps: 0.08em; /* para rótulos en mayúsculas */
+
+  /* --- Espaciado (base 4) ----------------------------------------------- */
+  --cp-space-1: 4px;
+  --cp-space-2: 8px;
+  --cp-space-3: 12px;
+  --cp-space-4: 16px;
+  --cp-space-5: 24px;
+  --cp-space-6: 32px;
+  --cp-space-7: 48px;
+  --cp-space-8: 64px;
+
+  /* --- Layout (ver README para breakpoints) ----------------------------- */
+  --cp-content-max: 1440px;
+  --cp-gutter: 32px;          /* 16px por debajo de 768px */
+  --cp-scoreboard-w: 320px;
+  --cp-cell-min: 44px;        /* casilla mínima para tocar */
+  --cp-cell-max: 88px;
+  --cp-touch: 44px;           /* alto mínimo de cualquier control */
+}
+
+/* --- Modo oscuro ------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --cp-bg: #101114;
+    --cp-surface: #191b20;
+    --cp-surface-2: #23262d;
+    --cp-overlay: rgba(0, 0, 0, 0.66);
+    --cp-border: #353943;
+    --cp-border-strong: #d9d4ca;
+    --cp-text: #ece8e1;
+    --cp-text-muted: #aba69d;
+    --cp-text-faint: #958f87;
+    --cp-accent: #e3a443;
+    --cp-on-accent: #17130b;
+    --cp-accent-text: #f0b95a;
+    --cp-accent-soft: #3a2e17;
+    --cp-focus: #8ab4ff;
+    --cp-danger: #e5534b;
+    --cp-on-danger: #170605;
+    --cp-danger-text: #ff8f86;
+    --cp-danger-soft: #3d1a18;
+    --cp-success: #4fbf7f;
+    --cp-on-success: #07170e;
+    --cp-success-text: #6fd49a;
+    --cp-success-soft: #15301f;
+    --cp-wall: #d9d4ca;
+    --cp-grid-line: rgba(236, 232, 225, 0.16);
+    --cp-room-ink: #ece8e1;
+    --cp-obj-block: #d2cdc4;
+    --cp-obj-free: #aba69d;
+    --cp-mark: #b8b2a8;
+    --cp-hatch: repeating-linear-gradient(45deg, rgba(236, 232, 225, 0.12) 0 2px, transparent 2px 7px);
+    --cp-dim: rgba(16, 17, 20, 0.6);
+    --cp-room-1: #4a2f27;
+    --cp-room-2: #2c3d2e;
+    --cp-room-3: #26334a;
+    --cp-room-4: #46401f;
+    --cp-room-5: #3b2c47;
+    --cp-room-6: #1f3f3d;
+    --cp-room-7: #47282f;
+    --cp-room-8: #38352f;
+    --cp-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --cp-shadow-2: 0 10px 24px -8px rgba(0, 0, 0, 0.6);
+    --cp-shadow-3: 0 28px 64px -12px rgba(0, 0, 0, 0.75);
+  }
+}
+
+/* Mismo bloque, forzado a mano (selector de tema en la app). */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --cp-bg: #101114;
+  --cp-surface: #191b20;
+  --cp-surface-2: #23262d;
+  --cp-overlay: rgba(0, 0, 0, 0.66);
+  --cp-border: #353943;
+  --cp-border-strong: #d9d4ca;
+  --cp-text: #ece8e1;
+  --cp-text-muted: #aba69d;
+  --cp-text-faint: #958f87;
+  --cp-accent: #e3a443;
+  --cp-on-accent: #17130b;
+  --cp-accent-text: #f0b95a;
+  --cp-accent-soft: #3a2e17;
+  --cp-focus: #8ab4ff;
+  --cp-danger: #e5534b;
+  --cp-on-danger: #170605;
+  --cp-danger-text: #ff8f86;
+  --cp-danger-soft: #3d1a18;
+  --cp-success: #4fbf7f;
+  --cp-on-success: #07170e;
+  --cp-success-text: #6fd49a;
+  --cp-success-soft: #15301f;
+  --cp-wall: #d9d4ca;
+  --cp-grid-line: rgba(236, 232, 225, 0.16);
+  --cp-room-ink: #ece8e1;
+  --cp-obj-block: #d2cdc4;
+  --cp-obj-free: #aba69d;
+  --cp-mark: #b8b2a8;
+  --cp-hatch: repeating-linear-gradient(45deg, rgba(236, 232, 225, 0.12) 0 2px, transparent 2px 7px);
+  --cp-dim: rgba(16, 17, 20, 0.6);
+  --cp-room-1: #4a2f27;
+  --cp-room-2: #2c3d2e;
+  --cp-room-3: #26334a;
+  --cp-room-4: #46401f;
+  --cp-room-5: #3b2c47;
+  --cp-room-6: #1f3f3d;
+  --cp-room-7: #47282f;
+  --cp-room-8: #38352f;
+  --cp-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --cp-shadow-2: 0 10px 24px -8px rgba(0, 0, 0, 0.6);
+  --cp-shadow-3: 0 28px 64px -12px rgba(0, 0, 0, 0.75);
+}
+
+/* --- Base mínima --------------------------------------------------------- */
+body {
+  margin: 0;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: var(--cp-font-body);
+  font-size: var(--cp-text-md);
+  line-height: var(--cp-leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 3px solid var(--cp-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "validate": "tsx scripts/validate.ts",
     "suggest": "tsx scripts/suggest.ts",
-    "publish-puzzle": "tsx scripts/publish.ts"
+    "publish-puzzle": "tsx scripts/publish.ts",
+    "dev:local": "vite --mode offline"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

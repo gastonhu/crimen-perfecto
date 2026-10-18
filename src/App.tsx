@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { backend, type GlobalRow, type PuzzleRow, type Session } from './api';
 import type { Puzzle } from './engine';
 import { puzzleById } from './puzzles';
+import sprite from '../design/furniture-icons.svg?raw';
 import { AuthDialog } from './ui/AuthDialog';
 import { CaseSelect } from './ui/CaseSelect';
 import { Game } from './ui/Game';
@@ -66,14 +67,13 @@ export function App() {
   };
 
   return (
-    <div className="app">
+    <div className={`app ${session && puzzle ? 'in-game' : ''}`}>
+      <div hidden dangerouslySetInnerHTML={{ __html: sprite }} />
       <header className="top">
-        <h1>
-          <span aria-hidden>🔎</span> Crimen Perfecto
-        </h1>
+        <h1>Crimen Perfecto</h1>
         {session && (
           <div className="me">
-            <span>🕵️ {session.alias}</span>
+            <span className="alias">🕵️ {session.alias}</span>
             <button className="ghost" onClick={logout}>
               Salir
             </button>

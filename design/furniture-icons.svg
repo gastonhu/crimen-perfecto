@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <!--
+    Crimen Perfecto: íconos de muebles (24×24, trazo 1.75, currentColor).
+    Los ids siguen los códigos de `objects` del motor (src/engine/types.ts).
+    Uso: <svg class="obj"><use href="furniture-icons.svg#obj-T"/></svg>
+    Bloquean: T S P V K M. Se puede estar encima: C B R.
+  -->
+  <symbol id="obj-T" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <title>Mesa</title>
+    <path d="M4 7h16a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z M6 10v9 M18 10v9 M6 15h12"/>
+  </symbol>
+  <symbol id="obj-S" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <title>Estante</title>
+    <path d="M4 3h16v18H4z M4 9h16 M4 15h16 M7.5 4.5v3 M10 4.5v3 M13.5 10.5v3 M16 10.5v3 M8 16.5v3 M16.5 16.5v3"/>
+  </symbol>
+  <symbol id="obj-P" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <title>Planta</title>
+    <path d="M8 15h8l-1.2 6H9.2z M12 15V9 M12 11.5C8.5 11.5 6.5 9.5 6.5 6 10 6 12 8 12 11.5z M12 9.5C12 6 14 4 17.5 4 17.5 7.5 15.5 9.5 12 9.5z"/>
+  </symbol>
+  <symbol id="obj-V" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <title>Televisor</title>
+    <path d="M4.5 5h15A1.5 1.5 0 0 1 21 6.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-9A1.5 1.5 0 0 1 4.5 5z M8 21h8 M12 17v4"/>
+  </symbol>
+  <symbol id="obj-K" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <title>Rack de servidores</title>
+    <path d="M5 2.5h14v19H5z M5 8.75h14 M5 15.25h14 M8 5.6h.01 M8 12h.01 M8 18.4h.01 M11 5.6h5 M11 12h5 M11 18.4h5"/>
+  </symbol>
+  <symbol id="obj-M" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <title>Equipaje</title>
+    <path d="M6 7h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z M9 7V4h6v3 M9 7v13 M15 7v13"/>
+  </symbol>
+  <symbol id="obj-C" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <title>Silla</title>
+    <path d="M8 3v18 M8 13h9v8 M8 7.5h5"/>
+  </symbol>
+  <symbol id="obj-B" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <title>Cama</title>
+    <path d="M3 6v14 M3 16h18v4 M21 16v-2a2 2 0 0 0-2-2h-8v4 M5 13.5a1.75 1.75 0 1 0 3.5 0a1.75 1.75 0 1 0-3.5 0"/>
+  </symbol>
+  <symbol id="obj-R" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <title>Alfombra</title>
+    <path d="M5 6h14v12H5z M8 9h8v6H8z M5 8H3 M5 12H3 M5 16H3 M19 8h2 M19 12h2 M19 16h2"/>
+  </symbol>
+  <symbol id="mark-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round">
+    <title>Marcada</title>
+    <path d="M6 6l12 12 M18 6L6 18"/>
+  </symbol>
+</svg>
