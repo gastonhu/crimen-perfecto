@@ -1,0 +1,119 @@
+{
+  "id": "tren-01",
+  "theme": "tren",
+  "title": "Expreso de medianoche",
+  "size": 6,
+  "difficulty": 4,
+  "story": "El tren nocturno cruza la Quebrada sin paradas. Al amanecer, el Conde Vidal aparece muerto en su camarote. Seis pasajeros, siete vagones y ninguna escapatoria.",
+  "epilogue": "{killer} esperó a que el tren entrara al túnel para visitar al Conde. Pero alguien siempre está despierto en un tren nocturno.",
+  "rooms": [
+    "AAABBB",
+    "AAABBB",
+    "CCCCDD",
+    "EEFFDD",
+    "EEFFGG",
+    "EEFFGG"
+  ],
+  "roomNames": {
+    "A": "el coche comedor",
+    "B": "el bar",
+    "C": "el pasillo",
+    "D": "el baño",
+    "E": "el camarote 1",
+    "F": "el camarote 2",
+    "G": "el furgón de equipaje"
+  },
+  "objects": [
+    "C.TC..",
+    ".T..V.",
+    "......",
+    "B..B.P",
+    "....M.",
+    ".R.C.M"
+  ],
+  "people": [
+    {
+      "id": "vidal",
+      "name": "Conde Vidal",
+      "role": "victim",
+      "avatar": "🧐",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "B"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "lucia",
+      "name": "Lucía",
+      "role": "suspect",
+      "avatar": "💁‍♀️",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "marcos",
+      "name": "Marcos",
+      "role": "suspect",
+      "avatar": "🤵",
+      "clue": {
+        "rules": [
+          [
+            "alone"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "olga",
+      "name": "Olga",
+      "role": "suspect",
+      "avatar": "🧶",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "D"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "pablo",
+      "name": "Pablo",
+      "role": "suspect",
+      "avatar": "🕶️",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "R"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "rita",
+      "name": "Rita",
+      "role": "suspect",
+      "avatar": "🎤",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "F"
+          ]
+        ]
+      }
+    }
+  ]
+}

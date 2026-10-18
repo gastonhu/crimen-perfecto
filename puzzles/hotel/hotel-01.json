@@ -1,0 +1,102 @@
+{
+  "id": "hotel-01",
+  "theme": "hotel",
+  "title": "Corte de luz en el Gran Hotel",
+  "size": 5,
+  "difficulty": 1,
+  "story": "Noche de tormenta en el Gran Hotel. A las 23:40 se corta la luz y, cuando vuelve, el gerente Don Ruiz yace sin vida. Nadie salió del edificio: el culpable sigue entre los presentes.",
+  "epilogue": "{killer} aprovechó el apagón para quedarse a solas con Don Ruiz. La tormenta no borró sus huellas.",
+  "rooms": [
+    "LLBBB",
+    "LLBBB",
+    "CCPPB",
+    "CCPSS",
+    "CCPSS"
+  ],
+  "roomNames": {
+    "L": "el lobby",
+    "B": "el bar",
+    "C": "la cocina",
+    "P": "el pasillo",
+    "S": "la suite"
+  },
+  "objects": [
+    ".C.T.",
+    "P...C",
+    "...S.",
+    "S....",
+    ".T.B."
+  ],
+  "people": [
+    {
+      "id": "ruiz",
+      "name": "Don Ruiz",
+      "role": "victim",
+      "avatar": "🎩",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "B"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ana",
+      "name": "Ana",
+      "role": "suspect",
+      "avatar": "🛎️",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "bruno",
+      "name": "Bruno",
+      "role": "suspect",
+      "avatar": "🍸",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "B"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "clara",
+      "name": "Clara",
+      "role": "suspect",
+      "avatar": "👒",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "S"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "diego",
+      "name": "Diego",
+      "role": "suspect",
+      "avatar": "🔪",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "P"
+          ]
+        ]
+      }
+    }
+  ]
+}

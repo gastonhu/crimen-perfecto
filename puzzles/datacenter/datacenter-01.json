@@ -1,0 +1,139 @@
+{
+  "id": "datacenter-01",
+  "theme": "datacenter",
+  "title": "Root caído",
+  "size": 7,
+  "difficulty": 4,
+  "story": "Domingo, 3:12 AM. Saltan las alarmas del datacenter y el sysadmin Ramiro aparece muerto entre los racks. Los logs de acceso fueron borrados, pero cada persona recuerda dónde estaba.",
+  "epilogue": "{killer} tenía credenciales, motivo y oportunidad. Lo que no tenía era una coartada que resistiera la lógica.",
+  "rooms": [
+    "RRRSSSS",
+    "RRRSSSS",
+    "OOOSSSS",
+    "OOOPPPP",
+    "CCOPNNN",
+    "CCLLNNN",
+    "CCLLNNN"
+  ],
+  "roomNames": {
+    "R": "la recepción",
+    "S": "la sala de servidores",
+    "O": "el SOC",
+    "P": "el pasillo",
+    "C": "la cocina",
+    "N": "el NOC",
+    "L": "el depósito"
+  },
+  "objects": [
+    ".C.K.K.",
+    "T..K.K.",
+    ".C...K.",
+    "V......",
+    ".T....C",
+    "...S.T.",
+    "P.R..C."
+  ],
+  "people": [
+    {
+      "id": "ramiro",
+      "name": "Ramiro",
+      "role": "victim",
+      "avatar": "🧑‍💻",
+      "clue": {
+        "rules": [
+          [
+            "notOnEdge"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "sofia",
+      "name": "Sofía",
+      "role": "suspect",
+      "avatar": "👩‍💼",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "O"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "tomas",
+      "name": "Tomás",
+      "role": "suspect",
+      "avatar": "🧑‍🎓",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "P"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "valeria",
+      "name": "Valeria",
+      "role": "suspect",
+      "avatar": "🥷",
+      "clue": {
+        "rules": [
+          [
+            "row",
+            3
+          ]
+        ]
+      }
+    },
+    {
+      "id": "hugo",
+      "name": "Hugo",
+      "role": "suspect",
+      "avatar": "💂",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ines",
+      "name": "Inés",
+      "role": "suspect",
+      "avatar": "🗃️",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "julian",
+      "name": "Julián",
+      "role": "suspect",
+      "avatar": "📦",
+      "clue": {
+        "rules": [
+          [
+            "southOf",
+            "tomas"
+          ],
+          [
+            "adjacentTo",
+            "S"
+          ]
+        ]
+      }
+    }
+  ]
+}
