@@ -4,3 +4,5 @@ dist
 .env.local
 # Borradores con soluciones: nunca al repo público
 drafts/
+.claude/worktrees/
+.vitest/
