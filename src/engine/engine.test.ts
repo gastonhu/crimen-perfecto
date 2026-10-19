@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { countSolutions, describeClue, describeFact, estimateDifficulty, killerOf, nextHint, solve, structuralErrors, violations } from '.';
+import { countSolutions, describeClue, describeFact, estimateDifficulty, explainNext, killerOf, nextHint, solve, structuralErrors, violations } from '.';
 import type { Puzzle } from './types';
 
 const load = (f: string): Puzzle => JSON.parse(readFileSync(new URL(`../../puzzles/${f}`, import.meta.url), 'utf8'));
@@ -152,4 +152,22 @@ describe('esquema de archivos', () => {
     const { loadPuzzles } = await import('../../scripts/lib');
     for (const { file, puzzle } of loadPuzzles()) expect(schemaErrors(puzzle), file).toEqual([]);
   });
+});
+
+describe('ayudas explicadas', () => {
+  for (const f of ['hotel/hotel-01.json', 'tren/tren-01.json', 'datacenter/datacenter-01.json']) {
+    it(`${f}: cada ayuda podada sigue llegando a la casilla correcta`, () => {
+      const p = load(f);
+      const [sol] = solve(p);
+      let current: Record<string, { r: number; c: number }> = {};
+      for (let k = 0; k < p.people.length; k++) {
+        const h = explainNext(p, sol, current);
+        expect(h.kind).toBe('deduction');
+        if (h.kind !== 'deduction') return;
+        expect(h.cell).toEqual(sol[h.personId]);
+        current = { ...current, [h.personId]: h.cell };
+      }
+      expect(explainNext(p, sol, current).kind).toBe('none');
+    });
+  }
 });

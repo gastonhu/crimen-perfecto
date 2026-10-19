@@ -40,9 +40,9 @@ export function Leaderboard({ online, me, global, puzzle, open, onToggle }: Prop
               <table>
                 <tbody>
                   {puzzle.rows.map((r, i) => (
-                    <tr key={r.alias} className={isMe(r.alias) ? 'me' : ''}>
+                    <tr key={r.alias} className={isMe(r.alias) ? 'is-me' : ''}>
                       <td className={`pos ${i === 0 ? 'first' : ''}`}>{i + 1}</td>
-                      <td>{r.alias}</td>
+                      <td title={r.alias}>{r.alias}</td>
                       <td className="num">{formatTime(r.seconds)}</td>
                     </tr>
                   ))}
@@ -66,9 +66,9 @@ export function Leaderboard({ online, me, global, puzzle, open, onToggle }: Prop
             </thead>
             <tbody>
               {global.map((r, i) => (
-                <tr key={r.alias} className={isMe(r.alias) ? 'me' : ''}>
+                <tr key={r.alias} className={isMe(r.alias) ? 'is-me' : ''}>
                   <td className={`pos ${i === 0 ? 'first' : ''}`}>{i + 1}</td>
-                  <td>{r.alias}</td>
+                  <td title={r.alias}>{r.alias}</td>
                   <td className="num">{r.points}</td>
                   <td className="num">{r.solved}</td>
                 </tr>

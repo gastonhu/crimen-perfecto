@@ -7,6 +7,9 @@ import { AuthDialog } from './ui/AuthDialog';
 import { CaseSelect } from './ui/CaseSelect';
 import { Game } from './ui/Game';
 import { Leaderboard } from './ui/Leaderboard';
+import { SettingsDialog } from './ui/SettingsDialog';
+import { updateSettings } from './ui/settings';
+import { Tutorial } from './ui/tutorial/Tutorial';
 
 const SESSION_KEY = 'crimen-perfecto:session';
 
@@ -25,6 +28,8 @@ export function App() {
   const [global, setGlobal] = useState<GlobalRow[]>([]);
   const [puzzleRows, setPuzzleRows] = useState<PuzzleRow[]>([]);
   const [lbOpen, setLbOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tutorial, setTutorial] = useState(false);
 
   const refresh = useCallback(() => {
     backend.leaderboard().then(setGlobal).catch(() => {});
@@ -67,27 +72,37 @@ export function App() {
   };
 
   return (
-    <div className={`app ${session && puzzle ? 'in-game' : ''}`}>
+    <div className={`app ${session && (puzzle || tutorial) ? 'in-game' : ''}`}>
       <div hidden dangerouslySetInnerHTML={{ __html: sprite }} />
       <header className="top">
         <h1>Crimen Perfecto</h1>
-        {session && (
-          <div className="me">
-            <span className="alias">🕵️ {session.alias}</span>
+        <div className="me">
+          {session && <span className="alias">🕵️ {session.alias}</span>}
+          <button className="ghost icon" onClick={() => setSettingsOpen(true)} aria-label="Ajustes" title="Ajustes">
+            ⚙
+          </button>
+          {session && (
             <button className="ghost" onClick={logout}>
               Salir
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </header>
       <div className="layout">
         <main>
           {!session ? (
             <AuthDialog onDone={login} />
+          ) : tutorial ? (
+            <Tutorial
+              onDone={() => {
+                updateSettings({ tutorialSeen: true });
+                setTutorial(false);
+              }}
+            />
           ) : puzzle ? (
             <Game key={puzzle.id} puzzle={puzzle} session={session} onExit={() => setPuzzle(null)} onSolved={refresh} />
           ) : (
-            <CaseSelect solved={solved} onPick={setPuzzle} />
+            <CaseSelect solved={solved} onPick={setPuzzle} onTutorial={() => setTutorial(true)} />
           )}
         </main>
         <Leaderboard
@@ -99,6 +114,7 @@ export function App() {
           onToggle={() => setLbOpen((o) => !o)}
         />
       </div>
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }

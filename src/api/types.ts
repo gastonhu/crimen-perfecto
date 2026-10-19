@@ -11,6 +11,8 @@ export interface Attempt {
   hintsUsed: number;
   wrongSubmits: number;
   solved: boolean;
+  /** Modo estricto: sin errores marcados ni ayudas, +25% de puntos. Se fija al abrir el caso. */
+  strict: boolean;
   score?: number;
   seconds?: number;
 }
@@ -40,7 +42,9 @@ export interface Backend {
   online: boolean;
   register(alias: string, pin: string): Promise<Session>;
   login(alias: string, pin: string): Promise<Session>;
-  startAttempt(s: Session, puzzleId: string): Promise<Attempt>;
+  /** Intento existente o null (no lo crea: el reloj no arranca). */
+  getAttempt(s: Session, puzzleId: string): Promise<Attempt | null>;
+  startAttempt(s: Session, puzzleId: string, strict: boolean): Promise<Attempt>;
   useHint(s: Session, attemptId: string): Promise<void>;
   submit(s: Session, attemptId: string, placements: Placement, killer: string): Promise<SubmitResult>;
   solvedPuzzles(s: Session): Promise<string[]>;
@@ -48,13 +52,14 @@ export interface Backend {
   puzzleLeaderboard(puzzleId: string): Promise<PuzzleRow[]>;
 }
 
-/** Puntaje (idéntico a la función SQL `cp_score`). */
-export function score(difficulty: number, size: number, seconds: number, hints: number, wrong: number): number {
+/** Puntaje (idéntico a `cp_score` en SQL, más el ×1.25 del modo estricto que aplica `cp_submit`). */
+export function score(difficulty: number, size: number, seconds: number, hints: number, wrong: number, strict = false): number {
   const base = 100 * difficulty;
   const par = size * size * 8;
   const timeFactor = Math.min(1.5, Math.max(0.5, par / Math.max(seconds, 1)));
   const penalty = Math.max(0.3, 1 - 0.15 * hints - 0.1 * wrong);
-  return Math.max(10, Math.round(base * timeFactor * penalty));
+  const points = Math.max(10, Math.round(base * timeFactor * penalty));
+  return strict ? Math.round(points * 1.25) : points;
 }
 
 export const ALIAS_RE = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9_.-]{3,20}$/;

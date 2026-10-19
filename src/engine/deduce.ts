@@ -44,6 +44,8 @@ export interface Step {
   focus: Cell[];
   /** Casillas descartadas por persona. */
   removed: Record<string, Cell[]>;
+  /** Personas cuyas casillas posibles leyó el paso para razonar (para podar explicaciones). */
+  uses?: string[];
 }
 
 // ---------- Utilidades ----------
@@ -128,7 +130,7 @@ function single(c: Ctx, d: Domains): Step | null {
       [only],
       keep,
     );
-    if (s) return s;
+    if (s) return { ...s, uses: [x.id] };
   }
   return null;
 }
@@ -164,19 +166,23 @@ function line(c: Ctx, d: Domains): Step | null {
       const keep: Record<string, (cell: Cell) => boolean> = {};
       for (const o of c.p.people) if (o.id !== x.id) keep[o.id] = (cell) => cell[axis] !== i;
       const s = stepFrom(d, 'line', `${c.name(x.id)} solo puede estar en ${what}, así que esa ${axis === 'r' ? 'fila' : 'columna'} es suya: nadie más va ahí.`, d[x.id], keep);
-      if (s) return s;
+      if (s) return { ...s, uses: [x.id] };
     }
   }
   return null;
 }
 
 function clue(c: Ctx, d: Domains): Step | null {
+  // Primero la pista que más restringe: es la que una persona miraría primero.
+  let best: Step | null = null;
+  let bestLeft = Infinity;
   for (const x of c.p.people) {
     const rules = x.clue.rules.filter(isUnary);
     if (!rules.length) continue;
     const ok = (cell: Cell) => rules.every((r) => evalUnary(c.p, r, cell));
     const left = d[x.id].filter(ok);
-    const text = rules.map((r) => describeRule(c.p, r)).join(' y ');
+    if (left.length >= bestLeft) continue;
+    const text = rules.map((r) => describeRule(c.p, r, x)).join(' y ');
     const s = stepFrom(
       d,
       'clue',
@@ -184,9 +190,12 @@ function clue(c: Ctx, d: Domains): Step | null {
       left,
       { [x.id]: ok },
     );
-    if (s) return s;
+    if (s) {
+      best = { ...s, uses: [x.id] };
+      bestLeft = left.length;
+    }
   }
-  return null;
+  return best;
 }
 
 function relation(c: Ctx, d: Domains): Step | null {
@@ -203,7 +212,7 @@ function relation(c: Ctx, d: Domains): Step | null {
         d[y],
         { [x.id]: (cx) => d[y].some((cy) => supported(rule, cx, cy)) },
       );
-      if (sx) return sx;
+      if (sx) return { ...sx, uses: [x.id, y] };
       const sy = stepFrom(
         d,
         'relation',
@@ -211,7 +220,7 @@ function relation(c: Ctx, d: Domains): Step | null {
         d[x.id],
         { [y]: (cy) => d[x.id].some((cx) => supported(rule, cx, cy)) },
       );
-      if (sy) return sy;
+      if (sy) return { ...sy, uses: [x.id, y] };
     }
   return null;
 }
@@ -542,7 +551,7 @@ export function deduce(
     const s = firstStep(techniques, c, d);
     if (!s) break;
     apply(d, s);
-    steps.push(s);
+    steps.push(s.uses ? s : { ...s, uses: p.people.map((x) => x.id) });
   }
   return { steps, domains: d, solved: p.people.every((x) => d[x.id].length === 1), contradiction: contradiction(p, d) };
 }
@@ -612,9 +621,34 @@ export function explainNext(p: Puzzle, solution: Placement, current: Partial<Pla
   const isPlaced = (d: Domains) => pending.find((x) => d[x.id].length === 1);
   const r = deduce(p, start, { stopWhen: (d) => !!isPlaced(d) });
   const target = isPlaced(r.domains);
-  if (target) return { kind: 'deduction', personId: target.id, cell: r.domains[target.id][0], steps: r.steps };
+  if (target)
+    return { kind: 'deduction', personId: target.id, cell: r.domains[target.id][0], steps: essentialSteps(start, r.steps, target.id) };
   const fallback = pending.reduce((a, b) => (r.domains[b.id].length < r.domains[a.id].length ? b : a));
   return { kind: 'reveal', personId: fallback.id, cell: solution[fallback.id] };
+}
+
+/**
+ * Quita de una explicación los pasos que no hacen falta para ubicar a `target`. Un paso se puede quitar si,
+ * sin él (y sin los pasos posteriores que leían a quienes él modificó), la conclusión se sigue cumpliendo.
+ */
+export function essentialSteps(start: Domains, steps: Step[], target: string): Step[] {
+  const concludes = (kept: Step[]) => {
+    const d = clone(start);
+    for (const s of kept) apply(d, s);
+    return d[target].length === 1;
+  };
+  let kept = [...steps];
+  for (let i = kept.length - 2; i >= 0; i--) {
+    const drop = kept[i];
+    const touched = new Set(Object.keys(drop.removed));
+    // También caen los pasos posteriores que razonaban sobre alguien que este paso modificó.
+    const without = kept.filter((s, j) => j !== i && !(j > i && (s.uses ?? []).some((id) => touched.has(id))));
+    if (without.length && concludes(without)) {
+      kept = without;
+      i = Math.min(i, kept.length - 1);
+    }
+  }
+  return kept;
 }
 
 export type Hint =

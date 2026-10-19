@@ -1,7 +1,34 @@
 import { useEffect, useMemo, useState } from 'react';
-import { cellKey, clueText, colLabel, nextHint, solve, violations, type Cell, type Placement, type Puzzle } from '../engine';
+import {
+  OBJECTS,
+  cellKey,
+  clueText,
+  colLabel,
+  describeFact,
+  diagonals,
+  evalRelational,
+  explainNext,
+  factViolations,
+  isRelational,
+  killerOf,
+  objectAt,
+  roomAt,
+  roomIds,
+  roomLabel,
+  sidesWith,
+  solve,
+  unaryDomain,
+  violations,
+  type Cell,
+  type Explanation,
+  type Placement,
+  type Puzzle,
+} from '../engine';
 import { backend, type Attempt, type Session, type SubmitResult } from '../api';
 import { BoardView } from './BoardView';
+import { Dossier, crimeRuleText } from './Dossier';
+import { HintPanel } from './HintPanel';
+import { useSettings } from './settings';
 import { useGame } from './useGame';
 import { formatTime, shareText } from './format';
 
@@ -12,58 +39,120 @@ interface Props {
   onSolved: () => void;
 }
 
+type Mode = 'place' | 'mark' | 'notes';
+
+const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
 export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
+  const settings = useSettings();
   const game = useGame(p.id, session.alias);
   const { board } = game;
   const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const [phase, setPhase] = useState<'loading' | 'dossier' | 'playing'>('loading');
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(p.people[0].id);
-  const [mode, setMode] = useState<'place' | 'mark'>('place');
-  const [hint, setHint] = useState<{ text: string; cells: Cell[] } | null>(null);
+  const [mode, setMode] = useState<Mode>('place');
+  const [hint, setHint] = useState<Explanation | null>(null);
+  const [hintFocus, setHintFocus] = useState<Cell[]>([]);
+  // Pista interactiva: `hover` sigue al mouse/foco; `pinned` lo fija el botón 👁 (para touch).
+  const [hover, setHover] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<string | null>(null);
+  const preview = hover ?? pinned;
+  const [inspected, setInspected] = useState<Cell | null>(null);
   const [accusing, setAccusing] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
+  const [showSolved, setShowSolved] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [copied, setCopied] = useState(false);
 
   const solution = useMemo(() => solve(p, { limit: 1 })[0], [p]);
-  const bad = useMemo(() => new Set(violations(p, board.placements as Placement)), [p, board.placements]);
+  const strict = attempt?.strict ?? false;
+  const liveErrors = settings.liveErrors && !strict;
+  const bad = useMemo(
+    () => (liveErrors ? new Set(violations(p, board.placements as Placement)) : new Set<string>()),
+    [p, board.placements, liveErrors],
+  );
+  const badFacts = useMemo(
+    () => (liveErrors ? new Set(factViolations(p, board.placements as Placement)) : new Set<number>()),
+    [p, board.placements, liveErrors],
+  );
   const placedCount = p.people.filter((x) => board.placements[x.id]).length;
   const complete = placedCount === p.people.length;
   const solved = attempt?.solved || result?.correct;
+  const revealing = !!result?.correct && !showSolved && !dismissed;
 
+  // ¿Ya había un intento? Si no, mostramos el expediente sin arrancar el reloj.
   useEffect(() => {
     backend
-      .startAttempt(session, p.id)
-      .then(setAttempt)
-      .catch((e: Error) => setError(e.message));
+      .getAttempt(session, p.id)
+      .then((a) => {
+        setAttempt(a);
+        setPhase(a ? 'playing' : 'dossier');
+      })
+      .catch((e: Error) => {
+        setError(e.message);
+        setPhase('dossier');
+      });
   }, [p.id, session]);
 
-  useEffect(() => {
-    if (solved) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [solved]);
+  const open = async (strictMode: boolean) => {
+    setBusy(true);
+    try {
+      setAttempt(await backend.startAttempt(session, p.id, strictMode));
+      setPhase('playing');
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
+    if (solved || phase !== 'playing') return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [solved, phase]);
+
+  // Revelación: se ilumina la escena del crimen y después aparece el expediente cerrado.
+  useEffect(() => {
+    if (!result?.correct) return;
+    const t = setTimeout(() => setShowSolved(true), reducedMotion() ? 300 : 1800);
+    return () => clearTimeout(t);
+  }, [result?.correct]);
+
+  useEffect(() => {
+    if (phase !== 'playing') return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest('input, textarea, dialog')) return;
       const n = Number(e.key);
       if (n >= 1 && n <= p.people.length) setSelected(p.people[n - 1].id);
       else if (e.key === 'x') setMode((m) => (m === 'mark' ? 'place' : 'mark'));
+      else if (e.key === 'n') setMode((m) => (m === 'notes' ? 'place' : 'notes'));
       else if ((e.metaKey || e.ctrlKey) && e.key === 'z') e.shiftKey ? game.redo() : game.undo();
-      else if (e.key === 'Escape') setSelected(null);
-      else return;
+      else if (e.key === 'Escape') {
+        setSelected(null);
+        setPinned(null);
+      } else return;
       e.preventDefault();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  const name = (id?: string) => p.people.find((x) => x.id === id)?.name ?? '';
+
   const onCell = (cell: Cell, alt: boolean) => {
     if (solved) return;
-    setHint(null);
+    setHintFocus([]);
     if (mode === 'mark' || alt) return game.toggleMark(cell);
     const occupant = Object.entries(board.placements).find(([, c]) => c && cellKey(c) === cellKey(cell))?.[0];
+    if (mode === 'notes') {
+      if (occupant) return setSelected(occupant);
+      if (selected) game.toggleNote(cell, selected);
+      return;
+    }
     if (!selected || (occupant && occupant !== selected)) return setSelected(occupant ?? null);
     game.place(selected, cell);
     // Pasa al siguiente sin ubicar para agilizar.
@@ -72,25 +161,18 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
   };
 
   const askHint = async () => {
-    if (!attempt || solved) return;
-    const h = nextHint(p, solution, board.placements);
-    const name = (id: string) => p.people.find((x) => x.id === id)!.name;
-    const where = (cells: Cell[]) => cells.map((c) => `${colLabel(c.c)}${c.r + 1}`).join(', ');
-    if (h.kind === 'none') return setHint({ text: 'Ya ubicaste a todos: es hora de acusar.', cells: [] });
-    await backend.useHint(session, attempt.attemptId).catch(() => {});
-    setAttempt({ ...attempt, hintsUsed: attempt.hintsUsed + 1 });
-    if (h.kind === 'wrong') {
-      setSelected(h.personId);
-      return setHint({ text: `Algo no cuadra con ${name(h.personId)}. Revisá su ubicación.`, cells: [board.placements[h.personId]!] });
+    if (!attempt || solved || strict) return;
+    const h = explainNext(p, solution, board.placements);
+    setHint(h);
+    setHintFocus(h.kind === 'wrong' ? [board.placements[h.personId]!] : h.kind === 'deduction' ? (h.steps[0]?.focus ?? []) : []);
+    if (h.kind === 'none') return;
+    if (h.kind !== 'wrong') setSelected(h.personId);
+    try {
+      await backend.useHint(session, attempt.attemptId);
+      setAttempt({ ...attempt, hintsUsed: attempt.hintsUsed + 1 });
+    } catch (e) {
+      setError((e as Error).message);
     }
-    setSelected(h.personId);
-    setHint({
-      text:
-        h.kind === 'place'
-          ? `${name(h.personId)} solo puede estar en ${where(h.cells)}.`
-          : `${name(h.personId)} solo puede estar en una de estas casillas: ${where(h.cells)}.`,
-      cells: h.cells,
-    });
   };
 
   const accuse = async (killer: string) => {
@@ -100,23 +182,89 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
       const r = await backend.submit(session, attempt.attemptId, board.placements as Placement, killer);
       setResult(r);
       setAttempt({ ...attempt, wrongSubmits: r.wrongSubmits, solved: r.correct, score: r.score, seconds: r.seconds });
-      if (r.correct) onSolved();
+      if (r.correct) {
+        setHint(null);
+        onSolved();
+      }
     } catch (e) {
       setError((e as Error).message);
     }
   };
 
+  // Pista interactiva: casillas compatibles con la pista de la persona (y con quienes ya ubicaste).
+  const previewCells = useMemo(() => {
+    if (!preview) return null;
+    const x = p.people.find((o) => o.id === preview)!;
+    let cells = unaryDomain(p, x);
+    for (const rule of x.clue.rules.filter(isRelational)) {
+      const other = board.placements[rule[1] as string];
+      if (other) cells = cells.filter((c) => evalRelational(p, rule, c, other));
+    }
+    const open = unaryDomain(p, { ...x, clue: { rules: [] } }).length;
+    return cells.length < open ? new Set(cells.map(cellKey)) : null;
+  }, [preview, p, board.placements]);
+
+  // Revelación: la escena del crimen queda iluminada.
+  const crimeCells = useMemo(() => {
+    if (!result?.correct) return null;
+    const victim = p.people.find((x) => x.role === 'victim')!;
+    const v = solution[victim.id];
+    if ((p.crime ?? 'aloneWithVictim') === 'touchingVictim') {
+      const k = killerOf(p, solution)!;
+      return new Set([v, solution[k], ...diagonals(p, v)].map(cellKey));
+    }
+    const rid = roomAt(p, v);
+    const cells: string[] = [];
+    for (let r = 0; r < p.size; r++) for (let c = 0; c < p.size; c++) if (p.rooms[r][c] === rid) cells.push(`${r},${c}`);
+    return new Set(cells);
+  }, [result?.correct, p, solution]);
+
+  const crossed = useMemo(() => {
+    if (!settings.autoCross) return undefined;
+    const set = new Set<string>();
+    for (const c of Object.values(board.placements))
+      if (c)
+        for (let i = 0; i < p.size; i++) {
+          set.add(`${c.r},${i}`);
+          set.add(`${i},${c.c}`);
+        }
+    return set;
+  }, [settings.autoCross, board.placements, p.size]);
+
   const seconds = attempt?.seconds ?? (attempt ? Math.max(0, Math.round((now - attempt.startedAt) / 1000)) : 0);
-  const killerName = (id?: string) => p.people.find((x) => x.id === id)?.name ?? '';
+
+  if (phase === 'loading') return <p className="note">Abriendo el expediente…</p>;
+  if (phase === 'dossier')
+    return (
+      <>
+        {error && <p className="msg error">{error}</p>}
+        <Dossier puzzle={p} busy={busy} onOpen={open} onBack={onExit} />
+      </>
+    );
+
+  const inspectText = inspected
+    ? [
+        `${colLabel(inspected.c)}${inspected.r + 1}`,
+        roomLabel(p, roomAt(p, inspected)),
+        objectAt(p, inspected) !== '.' ? OBJECTS[objectAt(p, inspected) as keyof typeof OBJECTS].name : null,
+        sidesWith(p, inspected, 'windows').length ? 'ventana' : null,
+        sidesWith(p, inspected, 'doors').length ? 'puerta' : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : null;
 
   return (
-    <section className="game">
+    <section className={`game ${revealing ? 'revealing' : ''}`}>
       <header className="game-head">
         <button className="ghost back" onClick={onExit} aria-label="Volver a los casos">
           ←<span className="hide-sm"> Casos</span>
         </button>
         <div className="title">
-          <span className="eyebrow">Expediente · {p.size}×{p.size}</span>
+          <span className="eyebrow">
+            Expediente · {p.size}×{p.size}
+            {strict && <span className="chip strict-chip">Estricto</span>}
+          </span>
           <h2>{p.title}</h2>
         </div>
         <div className="timer" aria-label="Tiempo">
@@ -124,29 +272,43 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
         </div>
       </header>
 
-      <p className="story">{p.story}</p>
       {error && <p className="msg error">{error}</p>}
-      {hint && (
-        <p className="msg hint-msg" role="status">
-          💡 {hint.text}
-        </p>
-      )}
       {result && !result.correct && (
         <p className="msg error" role="status">
           No es correcto. Revisá las pistas e intentá de nuevo (errores: {result.wrongSubmits}).
         </p>
       )}
+      {hint && (
+        <HintPanel
+          key={JSON.stringify(board.placements)}
+          puzzle={p}
+          hint={hint}
+          onFocus={setHintFocus}
+          onApply={(id, cell) => {
+            game.moveTo(id, cell);
+            setHint(null);
+            setHintFocus([]);
+          }}
+          onClose={() => {
+            setHint(null);
+            setHintFocus([]);
+          }}
+        />
+      )}
 
       <div className="toolbar" role="toolbar" aria-label="Herramientas">
         <div className="segmented" role="group" aria-label="Modo">
           <button aria-pressed={mode === 'place'} onClick={() => setMode('place')}>
-            <span aria-hidden>👤</span> Colocar
+            <span aria-hidden>👤</span> <span className="tool-label">Colocar</span>
           </button>
           <button aria-pressed={mode === 'mark'} onClick={() => setMode('mark')}>
             <svg className="ico" aria-hidden>
               <use href="#mark-x" />
             </svg>{' '}
-            Marcar
+            <span className="tool-label">Marcar</span>
+          </button>
+          <button aria-pressed={mode === 'notes'} onClick={() => setMode('notes')} title="Notas (N)">
+            <span aria-hidden>✎</span> <span className="tool-label">Notas</span>
           </button>
         </div>
         <button onClick={game.undo} disabled={!game.canUndo} title="Deshacer (Ctrl+Z)">
@@ -158,25 +320,58 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
         <button className="desktop-only" onClick={game.clear} disabled={!!solved}>
           Borrar todo
         </button>
-        <button onClick={askHint} disabled={!!solved}>
-          <span aria-hidden>💡</span> <span className="tool-label">Ayuda{attempt?.hintsUsed ? ` (${attempt.hintsUsed})` : ''}</span>
-        </button>
+        {!strict && (
+          <button onClick={askHint} disabled={!!solved}>
+            <span aria-hidden>💡</span> <span className="tool-label">Ayuda{attempt?.hintsUsed ? ` (${attempt.hintsUsed})` : ''}</span>
+          </button>
+        )}
         <button className="danger" onClick={() => setAccusing(true)} disabled={!complete || !!solved}>
           <span aria-hidden>🔎</span> <span className="tool-label">Acusar</span>
         </button>
       </div>
 
       <div className="game-body">
-        <BoardView
-          puzzle={p}
-          board={board}
-          bad={bad}
-          highlight={new Set((hint?.cells ?? []).map(cellKey))}
-          selected={selected}
-          onCell={onCell}
-        />
+        <div className="board-col">
+          <BoardView
+            puzzle={p}
+            board={board}
+            bad={bad}
+            highlight={new Set(hintFocus.map(cellKey))}
+            focusCells={crimeCells ?? previewCells}
+            crossed={crossed}
+            selected={selected}
+            onCell={onCell}
+            onDrop={(id, cell) => !solved && game.moveTo(id, cell)}
+            onInspect={setInspected}
+            locked={!!solved}
+          />
+          <p className="inspect" aria-live="polite">
+            {inspectText ?? (mode === 'notes' ? 'Modo notas: tocá casillas para anotar candidatos de la persona elegida.' : ' ')}
+          </p>
+          <ul className="legend" aria-label="Habitaciones">
+            {roomIds(p).map((rid, i) => (
+              <li key={rid}>
+                <span className={`swatch room-${(i % 8) + 1}`} aria-hidden />
+                {roomLabel(p, rid)}
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <div className="people-col">
+          {(p.facts?.length ?? 0) > 0 && (
+            <section className="facts">
+              <h3 className="eyebrow">Hechos del caso</h3>
+              <ul>
+                {p.facts!.map((f, i) => (
+                  <li key={i} className={badFacts.has(i) ? 'bad' : ''}>
+                    {f.text ?? describeFact(p, f.fact)}
+                    {badFacts.has(i) && <span className="chip danger">No se cumple</span>}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <h3 className="eyebrow">
             Personas · {placedCount}/{p.people.length} en el plano
           </h3>
@@ -187,8 +382,15 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
                 <li
                   key={x.id}
                   className={['person', x.role, selected === x.id && 'selected', at && 'placed', bad.has(x.id) && 'bad'].filter(Boolean).join(' ')}
+                  onMouseEnter={() => setHover(x.id)}
+                  onMouseLeave={() => setHover((v) => (v === x.id ? null : v))}
                 >
-                  <button onClick={() => setSelected(x.id)} aria-pressed={selected === x.id}>
+                  <button
+                    onClick={() => setSelected(x.id)}
+                    onFocus={() => setHover(x.id)}
+                    onBlur={() => setHover((v) => (v === x.id ? null : v))}
+                    aria-pressed={selected === x.id}
+                  >
                     <span className="avatar">{x.avatar}</span>
                     <span className="who">
                       <span className="name">
@@ -201,11 +403,22 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
                       </span>
                     </span>
                   </button>
-                  {at && !solved && (
-                    <button className="ghost remove" onClick={() => game.remove(x.id)} aria-label={`Quitar a ${x.name} del plano`}>
-                      ×
+                  <div className="person-actions">
+                    <button
+                      className={`ghost peek ${pinned === x.id ? 'on' : ''}`}
+                      onClick={() => setPinned((v) => (v === x.id ? null : x.id))}
+                      aria-pressed={pinned === x.id}
+                      aria-label={`Ver en el plano dónde puede estar ${x.name}`}
+                      title="Ver en el plano"
+                    >
+                      👁
                     </button>
-                  )}
+                    {at && !solved && (
+                      <button className="ghost remove" onClick={() => game.remove(x.id)} aria-label={`Quitar a ${x.name} del plano`}>
+                        ×
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -215,18 +428,17 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
             <summary>Cómo se juega</summary>
             <ul>
               <li>Ubicá a cada persona en el plano: una sola por fila y una sola por columna.</li>
-              <li>Nadie puede estar sobre muebles que ocupan la casilla (mesas, estantes, plantas, TV, racks, equipaje). Sí sobre sillas, camas y alfombras.</li>
-              <li>"Junto a" significa en una casilla vecina hacia arriba, abajo, izquierda o derecha. "Más al norte" significa en una fila más arriba.</li>
-              <li>El asesino es el único sospechoso que quedó a solas con la víctima en la misma habitación.</li>
-              <li>Atajos: números para elegir persona, X para marcar, flechas para moverte por el plano, clic derecho o Shift+clic marca una casilla, Ctrl+Z deshace.</li>
+              <li>{crimeRuleText(p)}</li>
+              <li>Nadie puede estar sobre muebles que ocupan la casilla (rayados). Sí sobre sillas, camas y alfombras.</li>
+              <li>"Junto a" es una casilla vecina hacia arriba, abajo, izquierda o derecha. "En diagonal" es tocándose por la esquina. "Más al norte" es en una fila más arriba.</li>
+              <li>Pasá el mouse por una pista (o tocá 👁) para ver dónde puede estar esa persona.</li>
+              <li>Atajos: números para elegir persona, X marcar, N notas, flechas para moverte, Ctrl+Z deshace. Podés arrastrar las fichas.</li>
             </ul>
           </details>
         </div>
       </div>
 
-      {accusing && (
-        <div className="overlay" onClick={() => setAccusing(false)} />
-      )}
+      {accusing && <div className="overlay" onClick={() => setAccusing(false)} />}
       {accusing && (
         <dialog open className="modal" aria-label="Acusar">
           <h3>¿Quién lo hizo?</h3>
@@ -245,14 +457,18 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
         </dialog>
       )}
 
-      {result?.correct && (
-        <div className="overlay" />
+      {result?.correct && dismissed && (
+        <p className="msg solved-banner" role="status">
+          ✓ Caso cerrado · {result.score} pts
+          <button onClick={() => setDismissed(false)}>Ver resultado</button>
+        </p>
       )}
-      {result?.correct && (
+      {result?.correct && showSolved && !dismissed && <div className="overlay" />}
+      {result?.correct && showSolved && !dismissed && (
         <dialog open className="modal solved" aria-label="Caso resuelto">
           <span className="stamp">Caso cerrado</span>
           <h3>¡Lo resolviste!</h3>
-          <p>{(p.epilogue ?? '{killer} fue quien lo hizo.').replace('{killer}', killerName(result.killer))}</p>
+          <p>{(p.epilogue ?? '{killer} fue quien lo hizo.').replace('{killer}', name(result.killer))}</p>
           <dl className="stats">
             <div>
               <dt>Tiempo</dt>
@@ -267,11 +483,12 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
               <dd>{result.wrongSubmits}</dd>
             </div>
             <div className="score">
-              <dt>Puntos</dt>
+              <dt>Puntos{strict ? ' (+25%)' : ''}</dt>
               <dd>{result.score}</dd>
             </div>
           </dl>
           <div className="row">
+            <button onClick={() => setDismissed(true)}>Ver el plano</button>
             <button
               onClick={() =>
                 navigator.clipboard

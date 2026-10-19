@@ -1,6 +1,28 @@
 // Backend Supabase: toda la lógica sensible (PIN, tiempos, verificación de la solución) corre en funciones SQL.
 import { createClient } from '@supabase/supabase-js';
-import type { Backend, GlobalRow, PuzzleRow } from './types';
+import type { Attempt, Backend, GlobalRow, PuzzleRow } from './types';
+
+interface RawAttempt {
+  attempt_id: string;
+  started_at: string;
+  hints_used: number;
+  wrong_submits: number;
+  solved: boolean;
+  strict: boolean;
+  score: number | null;
+  seconds: number | null;
+}
+
+const toAttempt = (a: RawAttempt): Attempt => ({
+  attemptId: a.attempt_id,
+  startedAt: Date.parse(a.started_at),
+  hintsUsed: a.hints_used,
+  wrongSubmits: a.wrong_submits,
+  solved: a.solved,
+  strict: a.strict ?? false,
+  score: a.score ?? undefined,
+  seconds: a.seconds ?? undefined,
+});
 
 export function supabaseBackend(url: string, anonKey: string): Backend {
   const db = createClient(url, anonKey, { auth: { persistSession: false } });
@@ -19,25 +41,12 @@ export function supabaseBackend(url: string, anonKey: string): Backend {
     async login(alias, pin) {
       return { alias, token: await rpc<string>('cp_login', { p_alias: alias, p_pin: pin }) };
     },
-    async startAttempt(s, puzzleId) {
-      const a = await rpc<{
-        attempt_id: string;
-        started_at: string;
-        hints_used: number;
-        wrong_submits: number;
-        solved: boolean;
-        score: number | null;
-        seconds: number | null;
-      }>('cp_start_attempt', { p_token: s.token, p_puzzle_id: puzzleId });
-      return {
-        attemptId: a.attempt_id,
-        startedAt: Date.parse(a.started_at),
-        hintsUsed: a.hints_used,
-        wrongSubmits: a.wrong_submits,
-        solved: a.solved,
-        score: a.score ?? undefined,
-        seconds: a.seconds ?? undefined,
-      };
+    async getAttempt(s, puzzleId) {
+      const a = await rpc<RawAttempt | null>('cp_get_attempt', { p_token: s.token, p_puzzle_id: puzzleId });
+      return a ? toAttempt(a) : null;
+    },
+    async startAttempt(s, puzzleId, strict) {
+      return toAttempt(await rpc<RawAttempt>('cp_start_attempt', { p_token: s.token, p_puzzle_id: puzzleId, p_strict: strict }));
     },
     async useHint(s, attemptId) {
       await rpc('cp_use_hint', { p_token: s.token, p_attempt_id: attemptId });

@@ -1,12 +1,27 @@
 import type { Puzzle } from '../engine';
 import { PUZZLES, THEMES } from '../puzzles';
+import { updateSettings, useSettings } from './settings';
 
-export function CaseSelect({ solved, onPick }: { solved: Set<string>; onPick: (p: Puzzle) => void }) {
+export function CaseSelect({ solved, onPick, onTutorial }: { solved: Set<string>; onPick: (p: Puzzle) => void; onTutorial: () => void }) {
+  const { tutorialSeen } = useSettings();
   const themes = Object.keys(THEMES).filter((t) => PUZZLES.some((p) => p.theme === t));
   return (
     <section className="cases">
       <span className="eyebrow">Archivo de casos</span>
       <h2>Elegí un expediente</h2>
+      {!tutorialSeen && (
+        <div className="msg hint-msg tutorial-banner">
+          <span>¿Primera vez? Hacé el tutorial: un caso de práctica de un minuto.</span>
+          <span className="row">
+            <button className="primary accent" onClick={onTutorial}>
+              Empezar
+            </button>
+            <button className="ghost" onClick={() => updateSettings({ tutorialSeen: true })}>
+              Ya sé jugar
+            </button>
+          </span>
+        </div>
+      )}
       {themes.map((t) => (
         <div key={t} className="theme">
           <h3 className="theme-title">
@@ -32,6 +47,9 @@ export function CaseSelect({ solved, onPick }: { solved: Set<string>; onPick: (p
           </div>
         </div>
       ))}
+      <button className="ghost tutorial-link" onClick={onTutorial}>
+        🎓 Repasar el tutorial
+      </button>
     </section>
   );
 }

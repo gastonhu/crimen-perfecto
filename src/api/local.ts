@@ -53,10 +53,14 @@ export const localBackend: Backend = {
     return { alias: alias.trim(), token: norm(alias) };
   },
 
-  async startAttempt(sess, puzzleId) {
+  async getAttempt(sess, puzzleId) {
+    return load().attempts.find((a) => a.alias === sess.alias && a.puzzleId === puzzleId) ?? null;
+  },
+
+  async startAttempt(sess, puzzleId, strict) {
     const s = load();
     const prev = s.attempts.find((a) => a.alias === sess.alias && a.puzzleId === puzzleId);
-    if (prev) return prev;
+    if (prev) return { ...prev, strict: prev.strict ?? false };
     const a: LocalAttempt = {
       attemptId: crypto.randomUUID(),
       alias: sess.alias,
@@ -65,6 +69,7 @@ export const localBackend: Backend = {
       hintsUsed: 0,
       wrongSubmits: 0,
       solved: false,
+      strict,
     };
     s.attempts.push(a);
     save(s);
@@ -74,6 +79,7 @@ export const localBackend: Backend = {
   async useHint(_sess, attemptId) {
     const s = load();
     const a = s.attempts.find((x) => x.attemptId === attemptId);
+    if (a?.strict) throw new Error('En modo estricto no hay ayudas.');
     if (a && !a.solved) a.hintsUsed++;
     save(s);
   },
@@ -95,7 +101,7 @@ export const localBackend: Backend = {
     }
     a.solved = true;
     a.seconds = Math.round((Date.now() - a.startedAt) / 1000);
-    a.score = score(p.difficulty, p.size, a.seconds, a.hintsUsed, a.wrongSubmits);
+    a.score = score(p.difficulty, p.size, a.seconds, a.hintsUsed, a.wrongSubmits, a.strict);
     save(s);
     return { correct, wrongSubmits: a.wrongSubmits, score: a.score, seconds: a.seconds, killer: realKiller };
   },
