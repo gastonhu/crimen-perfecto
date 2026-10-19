@@ -55,6 +55,11 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
   const short = initials(p.people);
 
   // Cada casilla dibuja solo su borde superior e izquierdo; el contenedor, el derecho e inferior.
+  const run = (c: Cell) => {
+    let n = 1;
+    while (c.c + n < p.size && roomAt(p, { r: c.r, c: c.c + n }) === roomAt(p, c)) n++;
+    return n;
+  };
   const wallTop = (c: Cell) => c.r === 0 || roomAt(p, { r: c.r - 1, c: c.c }) !== roomAt(p, c);
   const wallLeft = (c: Cell) => c.c === 0 || roomAt(p, { r: c.r, c: c.c - 1 }) !== roomAt(p, c);
 
@@ -195,7 +200,12 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
                       if (!info?.blocking && !locked) onCell(cell, true);
                     }}
                   >
-                    {firstCell.get(rid) === k && <span className="room-name">{roomLabel(p, rid)}</span>}
+                    {firstCell.get(rid) === k && (
+                      // El rótulo ocupa todo el tramo de la habitación en esa fila, no solo la primera casilla.
+                      <span className="room-name" style={{ ['--run' as string]: run(cell) }}>
+                        {roomLabel(p, rid)}
+                      </span>
+                    )}
                     {windows.map((side) => (
                       <span key={`w${side}`} className={`feature window side-${side}`} aria-hidden />
                     ))}

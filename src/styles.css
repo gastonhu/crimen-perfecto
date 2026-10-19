@@ -329,3 +329,7 @@ button.big { min-height: 52px; padding: 0 var(--cp-space-5); font-size: var(--cp
 .game.revealing .cell.lit .token { animation: cp-pop .4s ease-out; }
 @keyframes cp-rise { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes cp-stamp { from { transform: rotate(-4deg) scale(1.8); opacity: 0; } to { transform: rotate(-4deg) scale(1); opacity: 1; } }
+
+/* Rótulo de habitación a lo ancho de su tramo (--run casillas), por encima de las casillas vecinas. */
+.cell .room-name { right: auto; width: calc(var(--cell) * var(--run, 1) - 8px); z-index: 1; }
+.alias { white-space: nowrap; }

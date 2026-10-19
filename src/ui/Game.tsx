@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   OBJECTS,
   cellKey,
@@ -67,6 +67,7 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
   const [dismissed, setDismissed] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [copied, setCopied] = useState(false);
+  const boardRef = useRef<HTMLDivElement>(null);
 
   const solution = useMemo(() => solve(p, { limit: 1 })[0], [p]);
   const strict = attempt?.strict ?? false;
@@ -126,6 +127,7 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
   useEffect(() => {
     if (phase !== 'playing') return;
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && accusing) return setAccusing(false);
       if ((e.target as HTMLElement).closest('input, textarea, dialog')) return;
       const n = Number(e.key);
       if (n >= 1 && n <= p.people.length) setSelected(p.people[n - 1].id);
@@ -268,7 +270,7 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
     : null;
   const previewPerson = preview && !crimeCells ? p.people.find((x) => x.id === preview) : null;
   const previewText = previewPerson
-    ? `${previewPerson.name}: ${previewCells ? `${previewCells.size} ${previewCells.size === 1 ? 'casilla posible' : 'casillas posibles'}` : 'su pista depende de dónde estén otras personas'}`
+    ? `${previewPerson.name} · ${clueText(p, previewPerson)} → ${previewCells ? `${previewCells.size} ${previewCells.size === 1 ? 'casilla posible' : 'casillas posibles'}` : 'su pista depende de dónde estén otras personas'}`
     : null;
 
   return (
@@ -348,7 +350,7 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
       </div>
 
       <div className="game-body">
-        <div className="board-col">
+        <div className="board-col" ref={boardRef}>
           <BoardView
             puzzle={p}
             board={board}
@@ -424,7 +426,13 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
                   <div className="person-actions">
                     <button
                       className={`ghost peek ${pinned === x.id ? 'on' : ''}`}
-                      onClick={() => setPinned((v) => (v === x.id ? null : x.id))}
+                      onClick={() => {
+                        setPinned((v) => (v === x.id ? null : x.id));
+                        // En mobile la lista queda debajo del plano: lo traemos a la vista para ver el resultado.
+                        const col = boardRef.current;
+                        if (pinned !== x.id && col && col.getBoundingClientRect().top < 0)
+                          col.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+                      }}
                       aria-pressed={pinned === x.id}
                       aria-label={`Ver en el plano dónde puede estar ${x.name}`}
                       title="Ver en el plano"
@@ -469,7 +477,7 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
                 </button>
               ))}
           </div>
-          <button className="ghost" onClick={() => setAccusing(false)}>
+          <button className="ghost" onClick={() => setAccusing(false)} autoFocus>
             Cancelar
           </button>
         </dialog>

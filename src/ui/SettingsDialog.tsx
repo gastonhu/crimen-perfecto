@@ -1,7 +1,13 @@
+import { useEffect } from 'react';
 import { updateSettings, useSettings, type Settings } from './settings';
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const s = useSettings();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
   const toggle = (key: 'liveErrors' | 'autoCross', label: string, help: string) => (
     <label className="setting">
       <input type="checkbox" checked={s[key]} onChange={(e) => updateSettings({ [key]: e.target.checked })} />
@@ -41,7 +47,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </div>
         </fieldset>
         <div className="row">
-          <button className="primary" onClick={onClose}>
+          <button className="primary" onClick={onClose} autoFocus>
             Listo
           </button>
         </div>
