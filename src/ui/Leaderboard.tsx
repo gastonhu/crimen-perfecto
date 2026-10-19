@@ -1,4 +1,5 @@
 import type { GlobalRow, PuzzleRow } from '../api';
+import { useConnection } from './ConnectionStatus';
 import { formatTime } from './format';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function Leaderboard({ online, me, global, puzzle, open, onToggle }: Props) {
+  const offline = useConnection() === 'offline' && online;
   const isMe = (a: string) => !!me && a.toLowerCase() === me.toLowerCase();
   const rank = global.findIndex((r) => isMe(r.alias));
   const summary = [
@@ -25,12 +27,17 @@ export function Leaderboard({ online, me, global, puzzle, open, onToggle }: Prop
     <aside className={`leaderboard ${open ? 'open' : ''}`} aria-label="Marcador">
       <button className="lb-toggle" onClick={onToggle} aria-expanded={open}>
         <span>🏆 Marcador</span>
-        <span className="lb-summary">{summary || 'Ver ranking'}</span>
+        <span className="lb-summary">{offline ? 'Sin conexión' : summary || 'Ver ranking'}</span>
         <span aria-hidden>{open ? '▾' : '▴'}</span>
       </button>
       <h2 className="lb-title">Marcador</h2>
       <div className="lb-body">
         {!online && <p className="note">Modo local: el marcador solo vive en este navegador.</p>}
+        {offline && (
+          <p className="msg error" role="status">
+            Sin conexión con el servidor: el marcador puede estar desactualizado. Se reintenta solo cada 30 segundos.
+          </p>
+        )}
         {puzzle && (
           <>
             <h3 className="eyebrow">Este caso · mejores tiempos</h3>

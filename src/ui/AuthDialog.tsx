@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import { ALIAS_RE, PIN_RE, backend, type Session } from '../api';
 
-export function AuthDialog({ onDone }: { onDone: (s: Session) => void }) {
-  const [mode, setMode] = useState<'register' | 'login'>('register');
-  const [alias, setAlias] = useState('');
+interface Props {
+  onDone: (s: Session) => void;
+  /** Aviso arriba del formulario (p. ej. sesión vencida): abre directamente en "Entrar". */
+  notice?: string;
+  alias?: string;
+}
+
+export function AuthDialog({ onDone, notice, alias: initialAlias }: Props) {
+  const [mode, setMode] = useState<'register' | 'login'>(notice ? 'login' : 'register');
+  const [alias, setAlias] = useState(initialAlias ?? '');
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -25,6 +32,11 @@ export function AuthDialog({ onDone }: { onDone: (s: Session) => void }) {
 
   return (
     <form className="auth card" onSubmit={submit}>
+      {notice && (
+        <p className="msg hint-msg" role="status">
+          {notice}
+        </p>
+      )}
       <h2>{mode === 'register' ? 'Nuevo detective' : 'Volver al caso'}</h2>
       <p className="note">
         {mode === 'register'

@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
-import { backend, type GlobalRow, type PuzzleRow, type Session } from './api';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { backend, onSessionExpired, type GlobalRow, type PuzzleRow, type Session } from './api';
 import type { Puzzle } from './engine';
 import { puzzleById } from './puzzles';
 import sprite from '../design/furniture-icons.svg?raw';
 import { AuthDialog } from './ui/AuthDialog';
 import { CaseSelect } from './ui/CaseSelect';
+import { ConnectionStatus } from './ui/ConnectionStatus';
 import { Game } from './ui/Game';
 import { Leaderboard } from './ui/Leaderboard';
 import { SettingsDialog } from './ui/SettingsDialog';
@@ -30,6 +31,12 @@ export function App() {
   const [lbOpen, setLbOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tutorial, setTutorial] = useState(false);
+  // Aviso en la pantalla de ingreso cuando el servidor rechazó la sesión (venció o se cerró).
+  const [expired, setExpired] = useState<string | null>(null);
+  const sessionRef = useRef(session);
+  useEffect(() => {
+    sessionRef.current = session;
+  });
 
   const refresh = useCallback(() => {
     backend.leaderboard().then(setGlobal).catch(() => {});
@@ -53,7 +60,28 @@ export function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  const forget = () => {
+    setSession(null);
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch {
+      /* nada */
+    }
+  };
+
+  useEffect(
+    () =>
+      onSessionExpired((token) => {
+        const s = sessionRef.current;
+        if (s?.token !== token) return; // aviso de una sesión que ya cerramos
+        forget();
+        setExpired(s.alias);
+      }),
+    [],
+  );
+
   const login = (s: Session) => {
+    setExpired(null);
     setSession(s);
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(s));
@@ -62,13 +90,9 @@ export function App() {
     }
   };
   const logout = () => {
-    setSession(null);
+    if (session) backend.logout(session).catch(() => {});
+    forget();
     setPuzzle(null);
-    try {
-      localStorage.removeItem(SESSION_KEY);
-    } catch {
-      /* nada */
-    }
   };
 
   return (
@@ -77,6 +101,7 @@ export function App() {
       <header className="top">
         <h1>Crimen Perfecto</h1>
         <div className="me">
+          <ConnectionStatus />
           {session && <span className="alias">🕵️ {session.alias}</span>}
           <button className="ghost icon" onClick={() => setSettingsOpen(true)} aria-label="Ajustes" title="Ajustes">
             ⚙
@@ -91,7 +116,11 @@ export function App() {
       <div className="layout">
         <main>
           {!session ? (
-            <AuthDialog onDone={login} />
+            <AuthDialog
+              onDone={login}
+              alias={expired ?? undefined}
+              notice={expired ? 'Tu sesión venció o se cerró. Volvé a ingresar con tu alias y PIN.' : undefined}
+            />
           ) : tutorial ? (
             <Tutorial
               onDone={() => {

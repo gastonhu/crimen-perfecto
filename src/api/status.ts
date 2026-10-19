@@ -11,7 +11,9 @@ export const connectionStore = {
   get: (): Connection => connection,
   subscribe(fn: () => void): () => void {
     connectionListeners.add(fn);
-    return () => connectionListeners.delete(fn);
+    return () => {
+      connectionListeners.delete(fn);
+    };
   },
 };
 
@@ -34,7 +36,9 @@ const sessionListeners = new Set<(token: string) => void>();
 /** Se llama cuando el servidor rechaza un token (venció o se cerró la sesión). */
 export function onSessionExpired(fn: (token: string) => void): () => void {
   sessionListeners.add(fn);
-  return () => sessionListeners.delete(fn);
+  return () => {
+    sessionListeners.delete(fn);
+  };
 }
 
 export function reportSessionExpired(token: string) {
