@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { OBJECTS, cellKey, colLabel, objectAt, roomAt, roomIds, roomLabel, sidesWith, type Cell, type Puzzle } from '../engine';
+import { initials } from './initials';
 import type { Board } from './useGame';
 
 interface Props {
@@ -39,7 +40,8 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
   const rooms = roomIds(p);
   const [focus, setFocus] = useState<Cell>({ r: 0, c: 0 });
   const [drag, setDrag] = useState<Drag | null>(null);
-  const suppressClick = useRef(false);
+  // Tras soltar una ficha, el navegador puede (o no) disparar un click: se ignora solo el inmediato.
+  const suppressClickUntil = useRef(0);
   const refs = useRef(new Map<string, HTMLButtonElement>());
 
   const firstCell = new Map<string, string>();
@@ -50,6 +52,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
   for (const [id, c] of Object.entries(board.placements)) if (c) who.set(cellKey(c), id);
   const marks = new Set(board.marks);
   const person = (id: string) => p.people.find((x) => x.id === id);
+  const short = initials(p.people);
 
   // Cada casilla dibuja solo su borde superior e izquierdo; el contenedor, el derecho e inferior.
   const wallTop = (c: Cell) => c.r === 0 || roomAt(p, { r: c.r - 1, c: c.c }) !== roomAt(p, c);
@@ -86,7 +89,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
       dragRef.current = null;
       setDrag(null);
       if (!d?.moved) return;
-      suppressClick.current = true;
+      suppressClickUntil.current = performance.now() + 250;
       const el = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-cell]');
       if (el && dropRef.current) {
         const [r, c] = el.dataset.cell!.split(',').map(Number);
@@ -183,10 +186,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
                     onPointerEnter={(e) => e.pointerType === 'mouse' && onInspect?.(cell)}
                     onKeyDown={(e) => onKeyDown(e, cell)}
                     onClick={(e) => {
-                      if (suppressClick.current) {
-                        suppressClick.current = false;
-                        return;
-                      }
+                      if (performance.now() < suppressClickUntil.current) return;
                       onInspect?.(cell);
                       if (!info?.blocking && !locked) onCell(cell, e.shiftKey);
                     }}
@@ -216,7 +216,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
                         }}
                       >
                         <span className="avatar">{here.avatar}</span>
-                        <span className="initial">{here.name[0]}</span>
+                        <span className="initial">{short.get(here.id)}</span>
                       </span>
                     )}
                     {marked && (
@@ -227,7 +227,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
                     {notes.length > 0 && (
                       <span className="notes" aria-hidden>
                         {notes.map((id) => (
-                          <span key={id}>{person(id)?.name[0]}</span>
+                          <span key={id}>{short.get(id)}</span>
                         ))}
                       </span>
                     )}
@@ -241,7 +241,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
       {dragging && (
         <span className={`token drag-ghost ${dragging.role}`} style={{ left: drag!.x, top: drag!.y }} aria-hidden>
           <span className="avatar">{dragging.avatar}</span>
-          <span className="initial">{dragging.name[0]}</span>
+          <span className="initial">{short.get(dragging.id)}</span>
         </span>
       )}
     </div>
