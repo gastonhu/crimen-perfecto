@@ -5,6 +5,13 @@ export interface Session {
   token: string;
 }
 
+/** Tablero en curso: colocaciones, marcas ✗ ("r,c") y notas (ids candidatos por casilla "r,c"). */
+export interface BoardData {
+  placements: Partial<Placement>;
+  marks: string[];
+  notes: Record<string, string[]>;
+}
+
 export interface Attempt {
   attemptId: string;
   startedAt: number;
@@ -15,6 +22,17 @@ export interface Attempt {
   strict: boolean;
   score?: number;
   seconds?: number;
+  /** Último tablero guardado en el servidor (sin validar: puede venir de otra versión del caso). */
+  board?: unknown;
+  /** Cuándo se guardó `board` (ms, reloj del servidor). */
+  boardUpdatedAt?: number;
+}
+
+/** Lo que el servidor sabe de un caso publicado. */
+export interface PuzzleMeta {
+  difficulty: number;
+  /** SHA-256 de la lógica del caso (`logicHash`), o null si se publicó antes de guardarlo. */
+  contentHash: string | null;
 }
 
 export interface SubmitResult {
@@ -42,15 +60,47 @@ export interface Backend {
   online: boolean;
   register(alias: string, pin: string): Promise<Session>;
   login(alias: string, pin: string): Promise<Session>;
+  /** Revoca la sesión en el servidor. */
+  logout(s: Session): Promise<void>;
   /** Intento existente o null (no lo crea: el reloj no arranca). */
   getAttempt(s: Session, puzzleId: string): Promise<Attempt | null>;
   startAttempt(s: Session, puzzleId: string, strict: boolean): Promise<Attempt>;
   useHint(s: Session, attemptId: string): Promise<void>;
-  submit(s: Session, attemptId: string, placements: Placement, killer: string): Promise<SubmitResult>;
+  /** Guarda el tablero en curso; devuelve la hora del servidor (ms). Falla si el intento ya está resuelto. */
+  saveProgress(s: Session, attemptId: string, board: BoardData): Promise<number>;
+  /** `contentHash`: hash del caso que tiene el front; si no coincide con el publicado, el servidor lo rechaza. */
+  submit(s: Session, attemptId: string, placements: Placement, killer: string, contentHash?: string): Promise<SubmitResult>;
   solvedPuzzles(s: Session): Promise<string[]>;
+  /** Metadatos del caso publicado, o null si no está publicado. */
+  puzzleMeta(puzzleId: string): Promise<PuzzleMeta | null>;
   leaderboard(): Promise<GlobalRow[]>;
   puzzleLeaderboard(puzzleId: string): Promise<PuzzleRow[]>;
 }
+
+/**
+ * Error del backend con un tipo para decidir qué hacer:
+ * - `offline`: no hubo respuesta (sin internet, servidor caído, timeout). Se puede reintentar.
+ * - `server`: el servidor respondió con un error 5xx. Se puede reintentar.
+ * - `session`: la sesión venció o se cerró: hay que volver a ingresar.
+ * - `rejected`: el servidor rechazó el pedido (validación, límite de intentos…). No tiene sentido reintentar.
+ */
+export type BackendErrorKind = 'offline' | 'server' | 'session' | 'rejected';
+
+export class BackendError extends Error {
+  readonly kind: BackendErrorKind;
+  constructor(message: string, kind: BackendErrorKind) {
+    super(message);
+    this.name = 'BackendError';
+    this.kind = kind;
+  }
+  get retryable(): boolean {
+    return this.kind === 'offline' || this.kind === 'server';
+  }
+}
+
+export const SESSION_INVALID = 'Sesión inválida. Volvé a ingresar.';
+export const isSessionError = (e: unknown): boolean => e instanceof BackendError && e.kind === 'session';
+export const isRetryable = (e: unknown): boolean => e instanceof BackendError && e.retryable;
 
 /** Puntaje (idéntico a `cp_score` en SQL, más el ×1.25 del modo estricto que aplica `cp_submit`). */
 export function score(difficulty: number, size: number, seconds: number, hints: number, wrong: number, strict = false): number {
