@@ -315,3 +315,10 @@ button.big { min-height: 52px; padding: 0 var(--cp-space-5); font-size: var(--cp
 .leaderboard th:first-child, .leaderboard td.pos { width: 2.4em; }
 .leaderboard .num { width: 4.2em; }
 .leaderboard td:nth-child(2), .leaderboard th:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Pista interactiva: lo que la pista nombra (mueble, ventana, persona) queda marcado y sin velo. */
+.cells.focusing .cell.ref { outline: 2px dotted var(--cp-text); outline-offset: -5px; z-index: 1; }
+.cells.focusing .cell.ref.dimmed::after { opacity: .35; }
+.cells.focusing .cell.ref .obj { color: var(--cp-accent-text); }
+.legend li { padding: 2px 6px; border-radius: var(--cp-radius-sm); border: 1px solid transparent; }
+.legend li.on { border-color: var(--cp-accent); background: var(--cp-accent-soft); font-weight: 600; }

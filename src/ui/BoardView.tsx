@@ -11,6 +11,8 @@ interface Props {
   highlight: Set<string>;
   /** Si está, se atenúan todas las casillas que NO están en este set (pista interactiva, revelación). */
   focusCells?: Set<string> | null;
+  /** Casillas que nombra la pista que se está mirando (mueble, ventana, otra persona). */
+  refCells?: Set<string>;
   /** Casillas atenuadas por "tachar fila y columna". */
   crossed?: Set<string>;
   selected: string | null;
@@ -33,7 +35,7 @@ interface Drag {
   moved: boolean;
 }
 
-export function BoardView({ puzzle: p, board, bad, highlight, focusCells, crossed, selected, onCell, onDrop, onInspect, locked }: Props) {
+export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCells, crossed, selected, onCell, onDrop, onInspect, locked }: Props) {
   const rooms = roomIds(p);
   const [focus, setFocus] = useState<Cell>({ r: 0, c: 0 });
   const [drag, setDrag] = useState<Drag | null>(null);
@@ -142,6 +144,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, crosse
                   personId && personId === selected && 'selected',
                   focusCells && !focusCells.has(k) && 'dimmed',
                   focusCells?.has(k) && 'lit',
+                  refCells?.has(k) && 'ref',
                   crossed?.has(k) && !here && 'crossed',
                   drag?.moved && 'drop-target',
                 ]

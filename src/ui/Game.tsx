@@ -26,6 +26,7 @@ import {
 } from '../engine';
 import { backend, type Attempt, type Session, type SubmitResult } from '../api';
 import { BoardView } from './BoardView';
+import { clueRefs } from './clueRefs';
 import { Dossier, crimeRuleText } from './Dossier';
 import { HintPanel } from './HintPanel';
 import { useSettings } from './settings';
@@ -203,6 +204,11 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
     const open = unaryDomain(p, { ...x, clue: { rules: [] } }).length;
     return cells.length < open ? new Set(cells.map(cellKey)) : null;
   }, [preview, p, board.placements]);
+  // …y lo que esa pista nombra (habitación, mueble, ventana, otra persona), para que se entienda el porqué.
+  const previewRefs = useMemo(() => {
+    if (!preview || result?.correct) return null;
+    return clueRefs(p, p.people.find((o) => o.id === preview)!, board.placements);
+  }, [preview, p, board.placements, result?.correct]);
 
   // Revelación: la escena del crimen queda iluminada.
   const crimeCells = useMemo(() => {
@@ -252,6 +258,11 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
       ]
         .filter(Boolean)
         .join(' · ')
+    : null;
+
+  const previewPerson = preview && !crimeCells ? p.people.find((x) => x.id === preview) : null;
+  const previewText = previewPerson
+    ? `${previewPerson.name}: ${previewCells ? `${previewCells.size} ${previewCells.size === 1 ? 'casilla posible' : 'casillas posibles'}` : 'su pista depende de dónde estén otras personas'}`
     : null;
 
   return (
@@ -338,6 +349,7 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
             bad={bad}
             highlight={new Set(hintFocus.map(cellKey))}
             focusCells={crimeCells ?? previewCells}
+            refCells={previewRefs?.cells}
             crossed={crossed}
             selected={selected}
             onCell={onCell}
@@ -346,11 +358,11 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
             locked={!!solved}
           />
           <p className="inspect" aria-live="polite">
-            {inspectText ?? (mode === 'notes' ? 'Modo notas: tocá casillas para anotar candidatos de la persona elegida.' : ' ')}
+            {previewText ?? inspectText ?? (mode === 'notes' ? 'Modo notas: tocá casillas para anotar candidatos de la persona elegida.' : ' ')}
           </p>
           <ul className="legend" aria-label="Habitaciones">
             {roomIds(p).map((rid, i) => (
-              <li key={rid}>
+              <li key={rid} className={previewRefs?.rooms.has(rid) ? 'on' : undefined}>
                 <span className={`swatch room-${(i % 8) + 1}`} aria-hidden />
                 {roomLabel(p, rid)}
               </li>
