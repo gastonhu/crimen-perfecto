@@ -23,6 +23,13 @@ interface Props {
   /** Casilla enfocada o bajo el dedo/mouse (para mostrar su detalle). */
   onInspect?: (cell: Cell | null) => void;
   locked?: boolean;
+  /**
+   * Editor: pintar arrastrando. Se llama al apretar sobre una casilla (`first`) y con cada casilla nueva que
+   * recorre el puntero; `x` e `y` dicen dónde se tocó dentro de la casilla (0 a 1).
+   */
+  onPaint?: (cell: Cell, info: { first: boolean; x: number; y: number }) => void;
+  /** Editor: las casillas con muebles que bloquean también se pueden tocar. */
+  allowBlocked?: boolean;
 }
 
 const ARROWS: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
@@ -36,7 +43,7 @@ interface Drag {
   moved: boolean;
 }
 
-export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCells, crossed, selected, onCell, onDrop, onInspect, locked }: Props) {
+export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCells, crossed, selected, onCell, onDrop, onInspect, locked, onPaint, allowBlocked }: Props) {
   const rooms = roomIds(p);
   const [focus, setFocus] = useState<Cell>({ r: 0, c: 0 });
   const [drag, setDrag] = useState<Drag | null>(null);
@@ -112,7 +119,42 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
     // Solo se re-suscribe al empezar o terminar un arrastre.
   }, [drag !== null]);
 
+  // Pincel del editor: el trazo sigue al puntero (mouse o dedo) por las casillas que recorre.
+  const [painting, setPainting] = useState(false);
+  const paintRef = useRef(onPaint);
+  paintRef.current = onPaint;
+  const lastPainted = useRef<string | null>(null);
+  const lastPoint = useRef<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    if (!painting) return;
+    const paintAt = (x: number, y: number) => {
+      const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-cell]');
+      if (!el || el.dataset.cell === lastPainted.current) return;
+      lastPainted.current = el.dataset.cell!;
+      const [r, c] = el.dataset.cell!.split(',').map(Number);
+      const box = el.getBoundingClientRect();
+      paintRef.current?.({ r, c }, { first: false, x: (x - box.left) / box.width, y: (y - box.top) / box.height });
+    };
+    // Un movimiento rápido puede saltear casillas: se recorre el tramo desde el punto anterior.
+    const move = (e: PointerEvent) => {
+      const from = lastPoint.current ?? { x: e.clientX, y: e.clientY };
+      const steps = Math.max(1, Math.ceil(Math.hypot(e.clientX - from.x, e.clientY - from.y) / 8));
+      for (let i = 1; i <= steps; i++) paintAt(from.x + ((e.clientX - from.x) * i) / steps, from.y + ((e.clientY - from.y) * i) / steps);
+      lastPoint.current = { x: e.clientX, y: e.clientY };
+    };
+    const up = () => setPainting(false);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    return () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
+  }, [painting]);
+
   const dragging = drag?.moved ? person(drag.personId) : null;
+  const usable = (blocking?: boolean) => !locked && (!blocking || !!allowBlocked);
 
   return (
     <div className="board-wrap">
@@ -127,7 +169,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
             <span key={r}>{r + 1}</span>
           ))}
         </div>
-        <div className={`cells ${focusCells ? 'focusing' : ''}`} role="grid" aria-label="Plano de la escena" onPointerLeave={() => onInspect?.(null)}>
+        <div className={`cells ${focusCells ? 'focusing' : ''} ${onPaint ? 'paintable' : ''}`} role="grid" aria-label="Plano de la escena" onPointerLeave={() => onInspect?.(null)}>
           {Array.from({ length: p.size }, (_, r) => (
             <div key={r} role="row" className="cells-row">
               {Array.from({ length: p.size }, (_, c) => {
@@ -182,7 +224,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
                     className={cls}
                     role="gridcell"
                     aria-label={label}
-                    aria-disabled={info?.blocking || locked || undefined}
+                    aria-disabled={!usable(info?.blocking) || undefined}
                     tabIndex={focus.r === r && focus.c === c ? 0 : -1}
                     onFocus={() => {
                       setFocus(cell);
@@ -190,14 +232,22 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
                     }}
                     onPointerEnter={(e) => e.pointerType === 'mouse' && onInspect?.(cell)}
                     onKeyDown={(e) => onKeyDown(e, cell)}
+                    onPointerDown={(e) => {
+                      if (!onPaint || e.button !== 0 || !usable(info?.blocking)) return;
+                      const box = e.currentTarget.getBoundingClientRect();
+                      lastPainted.current = k;
+                      lastPoint.current = { x: e.clientX, y: e.clientY };
+                      onPaint(cell, { first: true, x: (e.clientX - box.left) / box.width, y: (e.clientY - box.top) / box.height });
+                      setPainting(true);
+                    }}
                     onClick={(e) => {
                       if (performance.now() < suppressClickUntil.current) return;
                       onInspect?.(cell);
-                      if (!info?.blocking && !locked) onCell(cell, e.shiftKey);
+                      if (usable(info?.blocking)) onCell(cell, e.shiftKey);
                     }}
                     onContextMenu={(e) => {
                       e.preventDefault();
-                      if (!info?.blocking && !locked) onCell(cell, true);
+                      if (usable(info?.blocking)) onCell(cell, true);
                     }}
                   >
                     {firstCell.get(rid) === k && (

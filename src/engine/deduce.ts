@@ -577,7 +577,11 @@ export interface DifficultyReport {
 }
 
 export function estimateDifficulty(p: Puzzle): DifficultyReport {
-  const r = deduce(p);
+  return difficultyOf(deduce(p));
+}
+
+/** Dificultad a partir de una deducción completa ya hecha (`deduce(p)`), para no repetir el cálculo. */
+export function difficultyOf(r: Deduction): DifficultyReport {
   const techniques: Partial<Record<Technique, number>> = {};
   for (const s of r.steps) techniques[s.technique] = (techniques[s.technique] ?? 0) + 1;
   const level = Math.max(1, ...r.steps.map((s) => s.level));

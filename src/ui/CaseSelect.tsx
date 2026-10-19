@@ -50,6 +50,9 @@ export function CaseSelect({ solved, onPick, onTutorial }: { solved: Set<string>
       <button className="ghost tutorial-link" onClick={onTutorial}>
         🎓 Repasar el tutorial
       </button>
+      <a className="editor-link" href="#editor">
+        ✎ Crear un caso
+      </a>
     </section>
   );
 }

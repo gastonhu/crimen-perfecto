@@ -4,3 +4,4 @@ export * from './clues';
 export * from './solver';
 export * from './deduce';
 export * from './generate';
+export * from './fileFormat';

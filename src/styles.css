@@ -333,3 +333,7 @@ button.big { min-height: 52px; padding: 0 var(--cp-space-5); font-size: var(--cp
 /* Rótulo de habitación a lo ancho de su tramo (--run casillas), por encima de las casillas vecinas. */
 .cell .room-name { right: auto; width: calc(var(--cell) * var(--run, 1) - 8px); z-index: 1; }
 .alias { white-space: nowrap; }
+
+/* Acceso al editor de casos (sus estilos viven en src/editor/editor.css, que se carga con el editor). */
+.editor-link { display: inline-flex; align-items: center; min-height: var(--cp-touch); margin-left: var(--cp-space-3); color: var(--cp-accent-text); font-size: var(--cp-text-sm); font-weight: 600; }
+.layout.editor-layout { grid-template-columns: minmax(0, 1fr); }
