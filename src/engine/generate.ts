@@ -2,7 +2,7 @@
 // solución sea única. Lo usan el script `suggest` y (más adelante) el editor de casos.
 import { hasDoor, hasWindow, isBlocked, isOnEdge, neighbors, objectAt, roomAt, roomIds, structuralErrors } from './board';
 import { propagate } from './deduce';
-import { countSolutions, factViolations, killerOf, solve } from './solver';
+import { countSolutions, factViolations, killerOf, solve, violations } from './solver';
 import { OBJECTS, type ObjectCode, type Placement, type Puzzle, type Rule } from './types';
 
 /** Generador pseudoaleatorio determinístico (mulberry32). */
@@ -93,6 +93,11 @@ export interface GenerateOptions {
   maxRulesPerPerson?: number;
   /** Se llama con cada pista agregada y la cantidad de soluciones que quedan. */
   onStep?: (personId: string, rule: Rule, solutions: number) => void;
+  /**
+   * Reglas que eligió el autor y se respetan: se parte de ellas, nunca se podan y no cuentan para
+   * `maxRulesPerPerson`. Tienen que ser verdaderas con la solución.
+   */
+  fixed?: Record<string, Rule[]>;
 }
 
 const CAP = 300;
@@ -107,6 +112,14 @@ export function generateClues(base: Puzzle, solution: Placement, opts: GenerateO
   const p: Puzzle = { ...base, people: base.people.map((x) => ({ ...x, clue: { rules: [] } })) };
   const errs = draftErrors(p, solution);
   if (errs.length) throw new Error(errs.join('; '));
+  const fixedOf = (id: string) => opts.fixed?.[id] ?? [];
+  for (const x of p.people) x.clue.rules = [...fixedOf(x.id)];
+  const fixedErrs = structuralErrors(p);
+  if (fixedErrs.length) throw new Error(fixedErrs.join('; '));
+  const falsas = violations(p, solution);
+  if (falsas.length) throw new Error(`hay reglas fijadas que no se cumplen con la solución (${falsas.join(', ')})`);
+  const isFixed = (id: string, rule: Rule) => fixedOf(id).includes(rule);
+  const added = (x: Puzzle['people'][number]) => x.clue.rules.filter((r) => !isFixed(x.id, r)).length;
 
   const person = (id: string) => p.people.find((x) => x.id === id)!;
   const count = () => countSolutions(p, CAP);
@@ -119,7 +132,7 @@ export function generateClues(base: Puzzle, solution: Placement, opts: GenerateO
   while (current > 1) {
     let best: { id: string; rule: Rule; cost: number } | null = null;
     for (const x of shuffle(p.people, rand)) {
-      if (x.clue.rules.length >= maxRules) continue;
+      if (added(x) >= maxRules) continue;
       for (const { rule, interest } of candidates.get(x.id)!) {
         if (x.clue.rules.some((r) => r[0] === rule[0])) continue;
         x.clue.rules.push(rule);
@@ -127,7 +140,7 @@ export function generateClues(base: Puzzle, solution: Placement, opts: GenerateO
         const sp = n >= CAP ? spread() : 0;
         x.clue.rules.pop();
         const improves = n < current || (n >= CAP && sp < currentSpread);
-        const cost = (n >= CAP ? CAP * 100 + sp * 10 : n * 100) - interest * 15 + (x.clue.rules.length ? 40 : 0);
+        const cost = (n >= CAP ? CAP * 100 + sp * 10 : n * 100) - interest * 15 + (added(x) ? 40 : 0);
         if (improves && (!best || cost < best.cost)) best = { id: x.id, rule, cost };
       }
     }
@@ -146,6 +159,7 @@ export function generateClues(base: Puzzle, solution: Placement, opts: GenerateO
     for (const x of shuffle(p.people, rand))
       for (const rule of [...x.clue.rules]) {
         if (x.clue.rules.length === 1) break;
+        if (isFixed(x.id, rule)) continue;
         x.clue.rules = x.clue.rules.filter((r) => r !== rule);
         if (count() !== 1) x.clue.rules.push(rule);
       }
