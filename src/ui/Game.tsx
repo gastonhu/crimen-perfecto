@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   OBJECTS,
   cellKey,
@@ -11,6 +11,7 @@ import {
   factViolations,
   isRelational,
   killerOf,
+  logicHash,
   objectAt,
   roomAt,
   roomIds,
@@ -24,13 +25,13 @@ import {
   type Placement,
   type Puzzle,
 } from '../engine';
-import { backend, type Attempt, type Session, type SubmitResult } from '../api';
+import { backend, isRetryable, withRetry, type Attempt, type Session, type SubmitResult } from '../api';
 import { BoardView } from './BoardView';
 import { clueRefs } from './clueRefs';
 import { Dossier, crimeRuleText } from './Dossier';
 import { HintPanel } from './HintPanel';
 import { useSettings } from './settings';
-import { useGame } from './useGame';
+import { sanitizeBoard, useGame, type Board, type SaveState } from './useGame';
 import { formatTime, shareText } from './format';
 
 interface Props {
@@ -44,11 +45,24 @@ type Mode = 'place' | 'mark' | 'notes';
 
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
+const SAVE_LABEL: Partial<Record<SaveState, string>> = {
+  saving: 'Guardando…',
+  saved: '✓ Guardado',
+  offline: 'Sin conexión · guardado en este dispositivo',
+  error: 'No se pudo guardar en el servidor',
+};
+
 export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
   const settings = useSettings();
-  const game = useGame(p.id, session.alias);
-  const { board } = game;
   const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const [result, setResult] = useState<SubmitResult | null>(null);
+  // El progreso se sube al servidor mientras haya un intento abierto y sin resolver.
+  const remote =
+    attempt && !attempt.solved && !result?.correct
+      ? { save: (b: Board) => backend.saveProgress(session, attempt.attemptId, b) }
+      : null;
+  const game = useGame(p.id, session.alias, remote);
+  const { board, adoptRemote } = game;
   const [phase, setPhase] = useState<'loading' | 'dossier' | 'playing'>('loading');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +76,11 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
   const preview = hover ?? pinned;
   const [inspected, setInspected] = useState<Cell | null>(null);
   const [accusing, setAccusing] = useState(false);
-  const [result, setResult] = useState<SubmitResult | null>(null);
+  const [sending, setSending] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
+  // Hash de la lógica del caso que trae este bundle y si el servidor tiene publicado otro (el caso cambió).
+  const [contentHash, setContentHash] = useState<string | undefined>(undefined);
+  const [stale, setStale] = useState(false);
   const [showSolved, setShowSolved] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -85,24 +103,51 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
   const solved = attempt?.solved || result?.correct;
   const revealing = !!result?.correct && !showSolved && !dismissed;
 
+  // Si el servidor tiene un tablero más nuevo que este dispositivo (se jugó en otro), se usa ese.
+  const adoptFrom = useCallback(
+    (a: Attempt | null) => {
+      const b = a?.board ? sanitizeBoard(a.board, p) : null;
+      if (b && a?.boardUpdatedAt) adoptRemote({ board: b, updatedAt: a.boardUpdatedAt });
+    },
+    [p, adoptRemote],
+  );
+
   // ¿Ya había un intento? Si no, mostramos el expediente sin arrancar el reloj.
   useEffect(() => {
     backend
       .getAttempt(session, p.id)
       .then((a) => {
         setAttempt(a);
+        adoptFrom(a);
         setPhase(a ? 'playing' : 'dossier');
       })
       .catch((e: Error) => {
         setError(e.message);
         setPhase('dossier');
       });
-  }, [p.id, session]);
+  }, [p.id, session, adoptFrom]);
+
+  // ¿El caso publicado es el mismo que trae esta versión del juego? Si no, el servidor rechazaría la acusación.
+  useEffect(() => {
+    let alive = true;
+    const local = logicHash(p);
+    local.then((h) => alive && setContentHash(h));
+    Promise.all([local, backend.puzzleMeta(p.id)])
+      .then(([h, meta]) => alive && setStale(!!meta?.contentHash && meta.contentHash !== h))
+      .catch(() => {
+        /* sin conexión: no bloqueamos; el servidor igual controla el hash al acusar */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [p]);
 
   const open = async (strictMode: boolean) => {
     setBusy(true);
     try {
-      setAttempt(await backend.startAttempt(session, p.id, strictMode));
+      const a = await backend.startAttempt(session, p.id, strictMode);
+      setAttempt(a);
+      adoptFrom(a);
       setPhase('playing');
     } catch (e) {
       setError((e as Error).message);
@@ -133,7 +178,10 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
       if (n >= 1 && n <= p.people.length) setSelected(p.people[n - 1].id);
       else if (e.key === 'x') setMode((m) => (m === 'mark' ? 'place' : 'mark'));
       else if (e.key === 'n') setMode((m) => (m === 'notes' ? 'place' : 'notes'));
-      else if ((e.metaKey || e.ctrlKey) && e.key === 'z') e.shiftKey ? game.redo() : game.undo();
+      else if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        if (e.shiftKey) game.redo();
+        else game.undo();
+      }
       else if (e.key === 'Escape') {
         setSelected(null);
         setPinned(null);
@@ -179,10 +227,16 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
   };
 
   const accuse = async (killer: string) => {
-    if (!attempt) return;
+    if (!attempt || stale || sending) return;
     setAccusing(false);
+    setSending(true);
+    setError(null);
     try {
-      const r = await backend.submit(session, attempt.attemptId, board.placements as Placement, killer);
+      // Si se corta la conexión, se reintenta con espera creciente; los rechazos del servidor no se reintentan.
+      const r = await withRetry(
+        () => backend.submit(session, attempt.attemptId, board.placements as Placement, killer, contentHash),
+        { attempts: 4, onRetry: (n) => setInfo(`Sin conexión con el servidor: reintentando el envío (${n})…`) },
+      );
       setResult(r);
       setAttempt({ ...attempt, wrongSubmits: r.wrongSubmits, solved: r.correct, score: r.score, seconds: r.seconds });
       if (r.correct) {
@@ -190,7 +244,12 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
         onSolved();
       }
     } catch (e) {
-      setError((e as Error).message);
+      const msg = (e as Error).message;
+      if (msg.startsWith('Este caso cambió')) setStale(true);
+      else setError(isRetryable(e) ? `No se pudo enviar la acusación. ${msg}` : msg);
+    } finally {
+      setSending(false);
+      setInfo(null);
     }
   };
 
@@ -241,10 +300,21 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
 
   const seconds = attempt?.seconds ?? (attempt ? Math.max(0, Math.round((now - attempt.startedAt) / 1000)) : 0);
 
+  const staleMsg = stale && (
+    <p className="msg error" role="alert">
+      Este caso cambió desde que se cargó la página: recargala para jugar la versión actual. Mientras tanto no se puede
+      acusar.{' '}
+      <button className="ghost" onClick={() => location.reload()}>
+        Recargar
+      </button>
+    </p>
+  );
+
   if (phase === 'loading') return <p className="note">Abriendo el expediente…</p>;
   if (phase === 'dossier')
     return (
       <>
+        {staleMsg}
         {error && <p className="msg error">{error}</p>}
         <Dossier puzzle={p} busy={busy} onOpen={open} onBack={onExit} />
       </>
@@ -283,6 +353,11 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
           <span className="eyebrow">
             Expediente · {p.size}×{p.size}
             {strict && <span className="chip strict-chip">Estricto</span>}
+            {!solved && SAVE_LABEL[game.saveState] && (
+              <span className={`chip save-chip ${game.saveState === 'saved' ? 'success' : game.saveState === 'saving' ? '' : 'danger'}`} role="status">
+                {SAVE_LABEL[game.saveState]}
+              </span>
+            )}
           </span>
           <h2>{p.title}</h2>
         </div>
@@ -291,7 +366,13 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
         </div>
       </header>
 
+      {staleMsg}
       {error && <p className="msg error">{error}</p>}
+      {info && (
+        <p className="msg hint-msg" role="status">
+          {info}
+        </p>
+      )}
       {result && !result.correct && (
         <p className="msg error" role="status">
           No es correcto. Revisá las pistas e intentá de nuevo (errores: {result.wrongSubmits}).
@@ -344,8 +425,8 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
             <span aria-hidden>💡</span> <span className="tool-label">Ayuda{attempt?.hintsUsed ? ` (${attempt.hintsUsed})` : ''}</span>
           </button>
         )}
-        <button className="danger" onClick={() => setAccusing(true)} disabled={!complete || !!solved}>
-          <span aria-hidden>🔎</span> <span className="tool-label">Acusar</span>
+        <button className="danger" onClick={() => setAccusing(true)} disabled={!complete || !!solved || stale || sending}>
+          <span aria-hidden>🔎</span> <span className="tool-label">{sending ? 'Enviando…' : 'Acusar'}</span>
         </button>
       </div>
 
