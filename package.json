@@ -11,7 +11,8 @@
     "validate": "tsx scripts/validate.ts",
     "suggest": "tsx scripts/suggest.ts",
     "publish-puzzle": "tsx scripts/publish.ts",
-    "dev:local": "vite --mode offline"
+    "dev:local": "vite --mode offline",
+    "bench": "tsx scripts/bench.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
@@ -23,9 +24,11 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "fast-check": "^4.10.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "zod": "^4.6.7"
   }
 }

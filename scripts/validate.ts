@@ -1,6 +1,6 @@
 // Valida todos los casos de /puzzles: estructura, solución única, un solo culpable y dificultad estimada.
 // Uso: npm run validate [-- archivo.json ...]
-import { clueText, estimateDifficulty, killerOf, solve, structuralErrors } from '../src/engine';
+import { TECHNIQUE_NAME, clueText, deduce, estimateDifficulty, killerOf, solve, structuralErrors, type Technique } from '../src/engine';
 import { loadPuzzles, readPuzzle } from './lib';
 
 const files = process.argv.slice(2);
@@ -25,11 +25,19 @@ for (const { file, puzzle: p } of entries) {
   }
   const d = estimateDifficulty(p);
   const killerName = p.people.find((x) => x.id === killer)!.name;
+  const techs = Object.entries(d.techniques)
+    .map(([t, n]) => `${TECHNIQUE_NAME[t as Technique]}×${n}`)
+    .join(', ');
   console.log(
-    `✓ ${file}  ${p.size}x${p.size}  dificultad declarada ${p.difficulty} / estimada ${d.level} ` +
-      `(rondas ${d.rounds}, hipótesis ${d.trials})  ${ms}ms  culpable: ${killerName}`,
+    `${d.needsSearch ? '⚠' : '✓'} ${file}  ${p.size}x${p.size}  dificultad declarada ${p.difficulty} / calculada ${d.level}` +
+      `  ${ms}ms  culpable: ${killerName}\n     ${d.steps} pasos: ${techs}` +
+      (d.needsSearch ? '\n     ⚠ la deducción humana no alcanza: hay que adivinar. Agregá o cambiá pistas.' : ''),
   );
-  if (process.env.VERBOSE) for (const x of p.people) console.log(`     ${x.name}: ${clueText(p, x)}`);
+  if (p.difficulty !== d.level) console.log(`     ↳ conviene declarar "difficulty": ${d.level}`);
+  if (process.env.VERBOSE) {
+    for (const x of p.people) console.log(`     ${x.name}: ${clueText(p, x)}`);
+    deduce(p).steps.forEach((s, i) => console.log(`     ${i + 1}. [${TECHNIQUE_NAME[s.technique]}] ${s.reason}`));
+  }
 }
 
 console.log(`\n${entries.length - failed}/${entries.length} casos válidos`);

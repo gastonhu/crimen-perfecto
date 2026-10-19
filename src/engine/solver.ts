@@ -34,15 +34,16 @@ export function solve(p: Puzzle, opts: SolveOptions = {}): Placement[] {
     x.clue.rules.filter(isRelational).forEach((rule) => rel.push({ a, b: idx.get(rule[1] as string)!, rule })),
   );
   const relOf: RelConstraint[][] = people.map((_, i) => rel.filter((k) => k.a === i || k.b === i));
-  const companions: (number | null)[] = people.map((x) => {
-    const r = x.clue.rules.find(isRoomCount);
-    return r ? roomCompanions(r) : null;
-  });
+  // Cuántas otras personas exige cada pista de compañía (puede haber varias por persona).
+  const companions: number[][] = people.map((x, i) => [
+    ...(i === victim ? [1] : []), // la víctima comparte con exactamente uno: el asesino
+    ...x.clue.rules.filter(isRoomCount).map(roomCompanions),
+  ]);
 
-  const order = people.map((_, i) => i).sort((a, b) => domains[a].length - domains[b].length);
   const pos: (Cell | null)[] = new Array(n).fill(null);
   const room: (string | null)[] = new Array(n).fill(null);
   const occ = new Map<string, number>();
+  const full = (1 << n) - 1;
   let usedRows = 0;
   let usedCols = 0;
   const results: Placement[] = [];
@@ -51,24 +52,63 @@ export function solve(p: Puzzle, opts: SolveOptions = {}): Placement[] {
     for (let i = 0; i < n; i++) {
       if (room[i] === null) continue;
       const others = (occ.get(room[i]!) ?? 0) - 1;
-      const k = i === victim ? 1 : companions[i];
-      if (k === null) continue;
-      if (others > k || (final && others !== k)) return false;
+      for (const k of companions[i]) if (others > k || (final && others !== k)) return false;
     }
     return true;
   };
 
-  const step = (depth: number): boolean => {
-    if (depth === n) {
+  /** Casillas todavía posibles para i: fila y columna libres y compatibles con las personas ya ubicadas. */
+  const available = (i: number): Cell[] =>
+    domains[i].filter(
+      (cell) =>
+        !(usedRows & (1 << cell.r)) &&
+        !(usedCols & (1 << cell.c)) &&
+        relOf[i].every((k) => {
+          const other = k.a === i ? k.b : k.a;
+          if (!pos[other]) return true;
+          return k.a === i ? evalRelational(p, k.rule, cell, pos[other]!) : evalRelational(p, k.rule, pos[other]!, cell);
+        }),
+    );
+
+  const step = (placed: number): boolean => {
+    if (placed === n) {
       if (!capacityOk(true)) return false;
       const sol: Placement = {};
       people.forEach((x, i) => (sol[x.id] = pos[i]!));
       results.push(sol);
       return results.length >= limit;
     }
-    const i = order[depth];
-    for (const cell of domains[i]) {
-      if (usedRows & (1 << cell.r) || usedCols & (1 << cell.c)) continue;
+    // Elegir a la persona más restringida y verificar que todos sigan teniendo lugar (chequeo hacia adelante).
+    let best = -1;
+    let bestCells: Cell[] = [];
+    let rowCover = usedRows;
+    let colCover = usedCols;
+    const reach = new Map<string, number>(); // cuántas personas sin ubicar todavía pueden llegar a cada habitación
+    for (let i = 0; i < n; i++) {
+      if (pos[i]) continue;
+      const cells = available(i);
+      if (cells.length === 0) return false;
+      for (const rid of new Set(cells.map((c) => roomAt(p, c)))) reach.set(rid, (reach.get(rid) ?? 0) + 1);
+      for (const c of cells) {
+        rowCover |= 1 << c.r;
+        colCover |= 1 << c.c;
+      }
+      if (best < 0 || cells.length < bestCells.length) {
+        best = i;
+        bestCells = cells;
+      }
+    }
+    // Cada fila y columna vacía tiene que poder ocuparla alguien.
+    if (rowCover !== full || colCover !== full) return false;
+    // Las habitaciones que exigen compañía tienen que poder completarse con quienes faltan ubicar.
+    for (let j = 0; j < n; j++) {
+      if (room[j] === null) continue;
+      const others = occ.get(room[j]!)! - 1;
+      for (const k of companions[j]) if (others + (reach.get(room[j]!) ?? 0) < k) return false;
+    }
+
+    const i = best;
+    for (const cell of bestCells) {
       pos[i] = cell;
       const rid = roomAt(p, cell);
       room[i] = rid;
@@ -76,10 +116,7 @@ export function solve(p: Puzzle, opts: SolveOptions = {}): Placement[] {
       usedRows |= 1 << cell.r;
       usedCols |= 1 << cell.c;
 
-      const ok =
-        relOf[i].every((k) => !pos[k.a] || !pos[k.b] || evalRelational(p, k.rule, pos[k.a]!, pos[k.b]!)) &&
-        capacityOk(false);
-      if (ok && step(depth + 1)) return true;
+      if (capacityOk(false) && step(placed + 1)) return true;
 
       usedRows &= ~(1 << cell.r);
       usedCols &= ~(1 << cell.c);
