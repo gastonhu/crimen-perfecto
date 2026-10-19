@@ -130,7 +130,13 @@ export function downloadText(name: string, text: string) {
 
 /** Navega dentro de la app (la ruta vive en location.hash). */
 export const go = (hash: string) => {
-  location.hash = hash;
+  if (hash) {
+    location.hash = hash;
+    return;
+  }
+  // Volver al juego sin dejar un "#" colgado en la URL.
+  history.pushState(null, '', location.pathname + location.search);
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
 };
 
 // Avisos para mostrar al abrir un borrador recién creado o importado (sobreviven a la navegación por hash).

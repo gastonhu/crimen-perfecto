@@ -92,6 +92,11 @@ export function DraftEditor({ draftKey, backend }: { draftKey: string; backend: 
     [persist],
   );
 
+  // En pantallas angostas las pestañas scrollean: la elegida queda a la vista.
+  useEffect(() => {
+    document.getElementById(`ed-tab-${step}`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [step]);
+
   // Deshacer / rehacer con el teclado (fuera de los campos de texto, que tienen el suyo).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

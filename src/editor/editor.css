@@ -44,7 +44,7 @@
 .ed-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .ed-items { list-style: none; margin: var(--cp-space-2) 0 0; padding: 0; display: grid; gap: var(--cp-space-2); }
 .ed-items li { display: flex; align-items: center; gap: var(--cp-space-2); padding: var(--cp-space-2) var(--cp-space-3); border-radius: var(--cp-radius-md); }
-.ed-item-main { flex: 1; min-width: 0; display: grid; gap: 2px; justify-items: start; text-align: left; padding: var(--cp-space-2); border: 0; background: transparent; color: var(--cp-text); text-decoration: none; min-height: var(--cp-touch); border-radius: var(--cp-radius-md); font-weight: 500; }
+.ed .ed-item-main { flex: 1; min-width: 0; display: grid; gap: 2px; justify-items: start; justify-content: stretch; text-align: left; padding: var(--cp-space-2); border: 0; background: transparent; color: var(--cp-text); text-decoration: none; min-height: var(--cp-touch); border-radius: var(--cp-radius-md); font-weight: 500; }
 .ed-item-main:hover { background: var(--cp-surface-2); }
 .ed-item-meta { font-size: var(--cp-text-sm); color: var(--cp-text-muted); display: flex; flex-wrap: wrap; align-items: center; gap: var(--cp-space-1) var(--cp-space-2); }
 .ed-missing { padding: var(--cp-space-5); display: grid; gap: var(--cp-space-3); justify-items: start; }
@@ -123,7 +123,8 @@
 }
 .ed-person-main, .ed-person-extra { display: contents; }
 .ed-person.victim { border-left: 4px solid var(--cp-danger); }
-.ed-avatar input { text-align: center; font-size: 22px; width: 100%; }
+.ed .ed-avatar input { text-align: center; font-size: 22px; width: 100%; padding: 0 2px; }
+.ed .ed-avatar input::-webkit-calendar-picker-indicator { width: 10px; margin: 0; }
 .ed-person-extra > small { grid-column: 1 / -1; }
 .ed-id input { font-family: var(--cp-font-mono); }
 .ed-person-tools { flex-wrap: nowrap; gap: 0; }
@@ -212,7 +213,7 @@
   .ed-head .back { min-width: var(--cp-touch); padding: 0; }
   .ed-head h2 { font-size: var(--cp-text-lg); }
   .ed-save { display: none; }
-  .ed-person { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .ed-person { grid-template-columns: 76px minmax(0, 1fr) auto; }
   .ed-person .ed-name, .ed-person .ed-gender { grid-column: span 2; }
   .ed-person .ed-id { grid-column: 1 / -1; }
   .ed-person-tools { grid-column: 1 / -1; justify-content: flex-end; }
