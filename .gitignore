@@ -6,3 +6,5 @@ dist
 drafts/
 .claude/worktrees/
 .vitest/
+test-results/
+playwright-report/
