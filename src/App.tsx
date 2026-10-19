@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { backend, type GlobalRow, type PuzzleRow, type Session } from './api';
 import type { Puzzle } from './engine';
 import { puzzleById } from './puzzles';
@@ -12,6 +12,10 @@ import { updateSettings } from './ui/settings';
 import { Tutorial } from './ui/tutorial/Tutorial';
 
 const SESSION_KEY = 'crimen-perfecto:session';
+
+// Editor de casos (#editor, #editor/<borrador>): se carga aparte para no engordar el bundle del juego.
+const Editor = lazy(() => import('./editor/Editor'));
+const editorRoute = () => (/^#editor(\/|$)/.test(location.hash) ? location.hash.slice(1) : null);
 
 function loadSession(): Session | null {
   try {
@@ -30,6 +34,7 @@ export function App() {
   const [lbOpen, setLbOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tutorial, setTutorial] = useState(false);
+  const [editor, setEditor] = useState<string | null>(editorRoute);
 
   const refresh = useCallback(() => {
     backend.leaderboard().then(setGlobal).catch(() => {});
@@ -44,11 +49,15 @@ export function App() {
   }, [refresh]);
 
   useEffect(() => {
+    if (editorRoute()) return;
     history.replaceState(null, '', puzzle ? `#${puzzle.id}` : location.pathname);
   }, [puzzle]);
 
   useEffect(() => {
-    const onHash = () => setPuzzle(puzzleById(location.hash.slice(1)) ?? null);
+    const onHash = () => {
+      setEditor(editorRoute());
+      setPuzzle(puzzleById(location.hash.slice(1)) ?? null);
+    };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
@@ -88,9 +97,13 @@ export function App() {
           )}
         </div>
       </header>
-      <div className="layout">
+      <div className={`layout ${editor !== null ? 'editor-layout' : ''}`}>
         <main>
-          {!session ? (
+          {editor !== null ? (
+            <Suspense fallback={<p className="note">Cargando el editor…</p>}>
+              <Editor route={editor} />
+            </Suspense>
+          ) : !session ? (
             <AuthDialog onDone={login} />
           ) : tutorial ? (
             <Tutorial
@@ -105,14 +118,16 @@ export function App() {
             <CaseSelect solved={solved} onPick={setPuzzle} onTutorial={() => setTutorial(true)} />
           )}
         </main>
-        <Leaderboard
-          online={backend.online}
-          me={session?.alias}
-          global={global}
-          puzzle={puzzle ? { title: puzzle.title, rows: puzzleRows } : undefined}
-          open={lbOpen}
-          onToggle={() => setLbOpen((o) => !o)}
-        />
+        {editor === null && (
+          <Leaderboard
+            online={backend.online}
+            me={session?.alias}
+            global={global}
+            puzzle={puzzle ? { title: puzzle.title, rows: puzzleRows } : undefined}
+            open={lbOpen}
+            onToggle={() => setLbOpen((o) => !o)}
+          />
+        )}
       </div>
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </div>

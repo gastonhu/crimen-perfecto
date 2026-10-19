@@ -182,10 +182,11 @@ describe('solución', () => {
     const [v, a, b] = d.people;
     d = D.placePerson(d, b.id, { r: 0, c: 3 }); // sobre la mesa (y en la fila de la víctima)
     const texts = solutionIssues(d).map((i) => i.text);
-    expect(texts).toContain('Hay dos personas en la misma fila o columna.');
+    expect(texts).toContain(`${v.name} y ${b.name} comparten la fila 1.`);
+    expect(texts).toContain(`${b.name} y ${d.people[3].name} comparten la columna D.`);
     expect(texts).toContain(`${b.name} está sobre un mueble que bloquea la casilla.`);
     d = D.placePerson(buildCase().draft, a.id, null);
-    expect(solutionIssues(d).map((i) => i.text)[0]).toBe(`Falta ubicar a ${a.name}.`);
+    expect(solutionIssues(d).map((i) => i.text)).toEqual([`Falta ubicar a ${a.name}.`]);
     expect(humanize(d, `${v.id}: referencia a persona inexistente 'zzz'`)).toBe(`La pista de ${v.name} nombra a alguien que ya no está (zzz).`);
   });
 

@@ -87,7 +87,17 @@ export function solutionIssues(d: DraftFile): Issue[] {
   const sol = toPlacement(d.solution);
   // draftErrors corre sin pistas: las pistas viejas que dejaron de cumplirse se informan aparte.
   const bare: Puzzle = { ...p, people: p.people.map((x) => ({ ...x, clue: { rules: [] } })) };
-  const out = draftErrors(bare, sol).map((m) => err(humanize(d, m)));
+  const placed = d.people.filter((x) => sol[x.id]);
+  const clash = (axis: 'r' | 'c') =>
+    [...Array(d.size).keys()]
+      .map((i) => placed.filter((x) => sol[x.id][axis] === i))
+      .filter((g) => g.length > 1)
+      .map((g) => `${list(g.map((x) => x.name || x.id))} comparten la ${axis === 'r' ? `fila ${sol[g[0].id].r + 1}` : `columna ${String.fromCharCode(65 + sol[g[0].id].c)}`}.`);
+  const clashes = [...clash('r'), ...clash('c')];
+  const out = draftErrors(bare, sol).flatMap((m) =>
+    // "repite fila o columna" también salta cuando falta gente: se reemplaza por quiénes chocan, si chocan.
+    m === 'la solución repite fila o columna' ? clashes.map(err) : [err(humanize(d, m))],
+  );
   if (!out.length) {
     const falsas = violations(p, sol);
     if (falsas.length) out.push(warn(`Con esta solución dejan de ser ciertas las pistas de ${list(falsas.map((id) => nameOf(d, id)))}.`));
