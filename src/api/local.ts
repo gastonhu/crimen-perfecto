@@ -1,7 +1,7 @@
 // Backend local (sin Supabase): todo vive en localStorage de este navegador. Sirve para desarrollar y jugar offline.
 // Imita las reglas del servidor (sesiones que vencen, progreso por intento, hash del caso) para probar los mismos flujos.
-import { killerOf, logicHash, solve, type Placement } from '../engine';
-import { puzzleById } from '../puzzles';
+import { killerOf, logicHash, solve, type Placement, type Puzzle } from '../engine';
+import { BUNDLED, puzzleById } from '../puzzles';
 import {
   BackendError,
   SESSION_INVALID,
@@ -171,6 +171,19 @@ export const localBackend: Backend = {
     const s = load();
     const alias = player(s, sess);
     return s.attempts.filter((a) => a.alias === alias && a.solved).map((a) => a.puzzleId);
+  },
+
+  async listPuzzles() {
+    // Los del bundle más los "publicados" desde el editor en modo local (mismo navegador).
+    let local: Puzzle[] = [];
+    try {
+      const raw = JSON.parse(localStorage.getItem('crimen-perfecto:editor:published') ?? '{}') as Record<string, { puzzle: Puzzle }>;
+      local = Object.values(raw).map((x) => x.puzzle);
+    } catch {
+      /* sin almacenamiento o dato roto: solo los del bundle */
+    }
+    const ids = new Set(local.map((p) => p.id));
+    return [...BUNDLED.filter((p) => !ids.has(p.id)), ...local];
   },
 
   async puzzleMeta(puzzleId) {

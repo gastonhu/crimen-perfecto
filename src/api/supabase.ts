@@ -1,6 +1,7 @@
 // Backend Supabase: toda la lógica sensible (PIN, tiempos, verificación de la solución) corre en funciones SQL.
 // Cliente mínimo con fetch contra PostgREST, en vez de @supabase/supabase-js (que sumaba ~210 kB al bundle, ~54 kB
 // con gzip): POST /rest/v1/rpc/<fn> para las funciones y GET /rest/v1/<vista> para el ranking.
+import type { Puzzle } from '../engine';
 import {
   BackendError,
   SESSION_INVALID,
@@ -159,6 +160,10 @@ export function supabaseBackend(url: string, anonKey: string, fetchImpl: typeof 
         id: `eq.${puzzleId}`,
       });
       return rows[0] ? { difficulty: rows[0].difficulty, contentHash: rows[0].content_hash } : null;
+    },
+    async listPuzzles() {
+      const rows = await view<{ data: Puzzle }[]>('cp_public_puzzles', { select: 'data', order: 'published_at.desc' });
+      return rows.map((r) => r.data);
     },
     async leaderboard() {
       return view<GlobalRow[]>('cp_leaderboard', { select: 'alias,points,solved', limit: '20' });

@@ -1,4 +1,4 @@
-import type { Placement } from '../engine';
+import type { Placement, Puzzle } from '../engine';
 
 export interface Session {
   alias: string;
@@ -73,6 +73,8 @@ export interface Backend {
   solvedPuzzles(s: Session): Promise<string[]>;
   /** Metadatos del caso publicado, o null si no está publicado. */
   puzzleMeta(puzzleId: string): Promise<PuzzleMeta | null>;
+  /** Casos publicados para jugar (o null: usar los del bundle). */
+  listPuzzles(): Promise<Puzzle[] | null>;
   leaderboard(): Promise<GlobalRow[]>;
   puzzleLeaderboard(puzzleId: string): Promise<PuzzleRow[]>;
 }

@@ -27,7 +27,10 @@ for (const { file, puzzle: p } of entries) {
   const killer = killerOf(p, sols[0])!;
   const meta = await db
     .from('cp_puzzles')
-    .upsert({ id: p.id, theme: p.theme, size: p.size, difficulty: p.difficulty, content_hash: await logicHash(p) });
+    .upsert({
+      id: p.id, theme: p.theme, size: p.size, difficulty: p.difficulty, content_hash: await logicHash(p),
+      data: p, title: p.title, published: true, updated_at: new Date().toISOString(),
+    });
   if (meta.error) throw meta.error;
   const sol = await db.from('cp_solutions').upsert({ puzzle_id: p.id, placements: sols[0], killer });
   if (sol.error) throw sol.error;

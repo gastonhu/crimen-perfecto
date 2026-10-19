@@ -4,7 +4,7 @@ import type { Author } from './backend';
 import { go } from './common';
 import { DraftEditor } from './DraftEditor';
 import { DraftList } from './DraftList';
-import { editorBackend as backend } from './localBackend';
+import { editorBackend as backend } from './instance';
 import './editor.css';
 
 function AuthorSignIn({ onDone }: { onDone: (a: Author) => void }) {

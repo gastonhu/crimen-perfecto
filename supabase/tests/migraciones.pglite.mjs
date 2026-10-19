@@ -9,7 +9,14 @@ import { join } from 'node:path';
 
 const dir = process.argv[2];
 const db = new PGlite({ extensions: { citext, pgcrypto } });
-await db.exec('create schema extensions; create role anon; create role authenticated;');
+await db.exec(`create schema extensions; create role anon; create role authenticated;
+  -- Stub del schema auth de Supabase (PGlite no lo trae): usuarios y auth.uid() desde el JWT simulado.
+  create schema auth;
+  create table auth.users (id uuid primary key, email text);
+  create function auth.uid() returns uuid language sql stable as
+    $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  grant usage on schema auth to anon, authenticated;
+  grant execute on function auth.uid() to anon, authenticated;`);
 for (const f of readdirSync(dir).filter((f) => f.endsWith('.sql')).sort()) {
   await db.exec(readFileSync(join(dir, f), 'utf8'));
   console.log('aplicada', f);

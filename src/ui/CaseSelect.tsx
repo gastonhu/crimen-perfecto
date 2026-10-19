@@ -1,10 +1,12 @@
 import type { Puzzle } from '../engine';
-import { PUZZLES, THEMES } from '../puzzles';
+import { themeInfo, usePuzzles } from '../puzzles';
 import { updateSettings, useSettings } from './settings';
 
 export function CaseSelect({ solved, onPick, onTutorial }: { solved: Set<string>; onPick: (p: Puzzle) => void; onTutorial: () => void }) {
   const { tutorialSeen } = useSettings();
-  const themes = Object.keys(THEMES).filter((t) => PUZZLES.some((p) => p.theme === t));
+  const { list, loading, error } = usePuzzles();
+  // Los temas en el orden de la lista (ya viene ordenada): incluye temas nuevos creados desde el editor.
+  const themes = [...new Set(list.map((p) => p.theme))];
   return (
     <section className="cases">
       <span className="eyebrow">Archivo de casos</span>
@@ -22,13 +24,19 @@ export function CaseSelect({ solved, onPick, onTutorial }: { solved: Set<string>
           </span>
         </div>
       )}
+      {loading && <p className="note">Buscando casos en el archivo…</p>}
+      {error && (
+        <p className="msg error" role="status">
+          No pude traer los casos del servidor ({error}). Te muestro los que vienen con la app.
+        </p>
+      )}
       {themes.map((t) => (
         <div key={t} className="theme">
           <h3 className="theme-title">
-            <span aria-hidden>{THEMES[t].icon}</span> {THEMES[t].name}
+            <span aria-hidden>{themeInfo(t).icon}</span> {themeInfo(t).name}
           </h3>
           <div className="case-grid">
-            {PUZZLES.filter((p) => p.theme === t).map((p) => (
+            {list.filter((p) => p.theme === t).map((p) => (
               <button key={p.id} className={`case card ${solved.has(p.id) ? 'done' : ''}`} onClick={() => onPick(p)}>
                 <span className="case-title">{p.title}</span>
                 <span className="case-meta">

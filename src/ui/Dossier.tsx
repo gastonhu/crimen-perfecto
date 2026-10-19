@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { describeFact, type Puzzle } from '../engine';
-import { THEMES } from '../puzzles';
+import { themeInfo } from '../puzzles';
 
 export function crimeRuleText(p: Puzzle): string {
   return (p.crime ?? 'aloneWithVictim') === 'touchingVictim'
@@ -18,7 +18,7 @@ interface Props {
 /** Pantalla previa al tablero: el reloj recién arranca al abrir el caso. */
 export function Dossier({ puzzle: p, busy, onOpen, onBack }: Props) {
   const [strict, setStrict] = useState(false);
-  const theme = THEMES[p.theme];
+  const theme = themeInfo(p.theme);
   return (
     <section className="dossier card">
       <button className="ghost back" onClick={onBack}>

@@ -126,4 +126,3 @@ export function createLocalBackend(store: KeyValue = browserStorage()): EditorBa
 }
 
 /** La instancia que usa la app. Para conectar un servidor, reemplazá esto por otra implementación de EditorBackend. */
-export const editorBackend: EditorBackend = createLocalBackend();

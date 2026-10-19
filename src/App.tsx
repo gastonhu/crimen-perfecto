@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { backend, onSessionExpired, type GlobalRow, type PuzzleRow, type Session } from './api';
 import type { Puzzle } from './engine';
-import { puzzleById } from './puzzles';
+import { loadPuzzles, usePuzzles } from './puzzles';
 import sprite from '../design/furniture-icons.svg?raw';
 import { AuthDialog } from './ui/AuthDialog';
 import { CaseSelect } from './ui/CaseSelect';
@@ -28,7 +28,11 @@ function loadSession(): Session | null {
 
 export function App() {
   const [session, setSession] = useState<Session | null>(loadSession);
-  const [puzzle, setPuzzle] = useState<Puzzle | null>(() => puzzleById(location.hash.slice(1)) ?? null);
+  // El caso abierto se guarda por id: la lista puede llegar después (con servidor viene de la base).
+  const [puzzleId, setPuzzleId] = useState<string | null>(() => (editorRoute() ? null : location.hash.slice(1) || null));
+  const puzzles = usePuzzles();
+  const puzzle = puzzleId ? (puzzles.list.find((p) => p.id === puzzleId) ?? null) : null;
+  const setPuzzle = (p: Puzzle | null) => setPuzzleId(p?.id ?? null);
   const [solved, setSolved] = useState<Set<string>>(new Set());
   const [global, setGlobal] = useState<GlobalRow[]>([]);
   const [puzzleRows, setPuzzleRows] = useState<PuzzleRow[]>([]);
@@ -56,14 +60,19 @@ export function App() {
   }, [refresh]);
 
   useEffect(() => {
+    loadPuzzles(() => backend.listPuzzles());
+  }, [editor]);
+
+  useEffect(() => {
     if (editorRoute()) return;
+    if (puzzleId && !puzzle && puzzles.loading) return; // todavía no llegó la lista: no borrar el #caso
     history.replaceState(null, '', puzzle ? `#${puzzle.id}` : location.pathname);
-  }, [puzzle]);
+  }, [puzzle, puzzleId, puzzles.loading]);
 
   useEffect(() => {
     const onHash = () => {
       setEditor(editorRoute());
-      setPuzzle(puzzleById(location.hash.slice(1)) ?? null);
+      setPuzzleId(editorRoute() ? null : location.hash.slice(1) || null);
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -141,6 +150,8 @@ export function App() {
                 setTutorial(false);
               }}
             />
+          ) : puzzleId && !puzzle && puzzles.loading ? (
+            <p className="note">Abriendo el archivo de casos…</p>
           ) : puzzle ? (
             <Game key={puzzle.id} puzzle={puzzle} session={session} onExit={() => setPuzzle(null)} onSolved={refresh} />
           ) : (
