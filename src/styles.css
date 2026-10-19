@@ -322,3 +322,10 @@ button.big { min-height: 52px; padding: 0 var(--cp-space-5); font-size: var(--cp
 .cells.focusing .cell.ref .obj { color: var(--cp-accent-text); }
 .legend li { padding: 2px 6px; border-radius: var(--cp-radius-sm); border: 1px solid transparent; }
 .legend li.on { border-color: var(--cp-accent); background: var(--cp-accent-soft); font-weight: 600; }
+
+/* Caso cerrado: el expediente sube y el sello cae (tokens.css anula animaciones con reduced-motion). */
+.modal.solved { animation: cp-rise .3s ease-out; }
+.modal.solved .stamp { animation: cp-stamp .45s cubic-bezier(.2, 1.4, .4, 1) .2s both; }
+.game.revealing .cell.lit .token { animation: cp-pop .4s ease-out; }
+@keyframes cp-rise { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes cp-stamp { from { transform: rotate(-4deg) scale(1.8); opacity: 0; } to { transform: rotate(-4deg) scale(1); opacity: 1; } }

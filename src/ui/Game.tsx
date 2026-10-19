@@ -260,6 +260,12 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
         .join(' · ')
     : null;
 
+  const victim = p.people.find((x) => x.role === 'victim')!;
+  const crimeText = crimeCells
+    ? (p.crime ?? 'aloneWithVictim') === 'touchingVictim'
+      ? `Escena del crimen: ${name(result?.killer)}, en diagonal a ${victim.name}`
+      : `Escena del crimen: ${roomLabel(p, roomAt(p, solution[victim.id]))}, ${name(result?.killer)} a solas con ${victim.name}`
+    : null;
   const previewPerson = preview && !crimeCells ? p.people.find((x) => x.id === preview) : null;
   const previewText = previewPerson
     ? `${previewPerson.name}: ${previewCells ? `${previewCells.size} ${previewCells.size === 1 ? 'casilla posible' : 'casillas posibles'}` : 'su pista depende de dónde estén otras personas'}`
@@ -358,7 +364,7 @@ export function Game({ puzzle: p, session, onExit, onSolved }: Props) {
             locked={!!solved}
           />
           <p className="inspect" aria-live="polite">
-            {previewText ?? inspectText ?? (mode === 'notes' ? 'Modo notas: tocá casillas para anotar candidatos de la persona elegida.' : ' ')}
+            {crimeText ?? previewText ?? inspectText ?? (mode === 'notes' ? 'Modo notas: tocá casillas para anotar candidatos de la persona elegida.' : ' ')}
           </p>
           <ul className="legend" aria-label="Habitaciones">
             {roomIds(p).map((rid, i) => (
