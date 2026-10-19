@@ -1,4 +1,4 @@
-import { roomAt } from './board';
+import { diagonals, objectAt, roomAt } from './board';
 import { evalRelational, evalUnary, isRelational, isRoomCount, isUnary, roomCompanions, unaryDomain } from './clues';
 import type { Cell, Placement, Puzzle } from './types';
 
@@ -34,11 +34,19 @@ export function solve(p: Puzzle, opts: SolveOptions = {}): Placement[] {
     x.clue.rules.filter(isRelational).forEach((rule) => rel.push({ a, b: idx.get(rule[1] as string)!, rule })),
   );
   const relOf: RelConstraint[][] = people.map((_, i) => rel.filter((k) => k.a === i || k.b === i));
+  const crime = p.crime ?? 'aloneWithVictim';
   // Cuántas otras personas exige cada pista de compañía (puede haber varias por persona).
   const companions: number[][] = people.map((x, i) => [
-    ...(i === victim ? [1] : []), // la víctima comparte con exactamente uno: el asesino
+    ...(i === victim && crime === 'aloneWithVictim' ? [1] : []), // la víctima comparte solo con el asesino
     ...x.clue.rules.filter(isRoomCount).map(roomCompanions),
   ]);
+  // Hechos generales: gente por habitación y gente sobre cada tipo de mueble.
+  const roomFacts: [string, number][] = [];
+  const objFacts: [string, number][] = [];
+  for (const { fact } of p.facts ?? []) (fact[0] === 'roomCount' ? roomFacts : objFacts).push([fact[1], fact[2]]);
+  const onObj = new Map<string, number>();
+  const touchingVictim = () =>
+    pos[victim] ? people.filter((_, j) => j !== victim && pos[j] && isDiag(pos[j]!, pos[victim]!)).length : 0;
 
   const pos: (Cell | null)[] = new Array(n).fill(null);
   const room: (string | null)[] = new Array(n).fill(null);
@@ -53,6 +61,12 @@ export function solve(p: Puzzle, opts: SolveOptions = {}): Placement[] {
       if (room[i] === null) continue;
       const others = (occ.get(room[i]!) ?? 0) - 1;
       for (const k of companions[i]) if (others > k || (final && others !== k)) return false;
+    }
+    for (const [rid, k] of roomFacts) if ((occ.get(rid) ?? 0) > k || (final && (occ.get(rid) ?? 0) !== k)) return false;
+    for (const [code, k] of objFacts) if ((onObj.get(code) ?? 0) > k || (final && (onObj.get(code) ?? 0) !== k)) return false;
+    if (crime === 'touchingVictim') {
+      const t = touchingVictim();
+      if (t > 1 || (final && t !== 1)) return false;
     }
     return true;
   };
@@ -84,11 +98,17 @@ export function solve(p: Puzzle, opts: SolveOptions = {}): Placement[] {
     let rowCover = usedRows;
     let colCover = usedCols;
     const reach = new Map<string, number>(); // cuántas personas sin ubicar todavía pueden llegar a cada habitación
+    const reachObj = new Map<string, number>(); // ídem, a cada tipo de mueble
+    let canTouchVictim = false;
+    const vDiag = crime === 'touchingVictim' && pos[victim] ? diagonals(p, pos[victim]!) : null;
     for (let i = 0; i < n; i++) {
       if (pos[i]) continue;
       const cells = available(i);
       if (cells.length === 0) return false;
       for (const rid of new Set(cells.map((c) => roomAt(p, c)))) reach.set(rid, (reach.get(rid) ?? 0) + 1);
+      if (objFacts.length)
+        for (const code of new Set(cells.map((c) => objectAt(p, c)))) reachObj.set(code, (reachObj.get(code) ?? 0) + 1);
+      if (vDiag && cells.some((c) => vDiag.some((v) => v.r === c.r && v.c === c.c))) canTouchVictim = true;
       for (const c of cells) {
         rowCover |= 1 << c.r;
         colCover |= 1 << c.c;
@@ -106,6 +126,9 @@ export function solve(p: Puzzle, opts: SolveOptions = {}): Placement[] {
       const others = occ.get(room[j]!)! - 1;
       for (const k of companions[j]) if (others + (reach.get(room[j]!) ?? 0) < k) return false;
     }
+    for (const [rid, k] of roomFacts) if ((occ.get(rid) ?? 0) + (reach.get(rid) ?? 0) < k) return false;
+    for (const [code, k] of objFacts) if ((onObj.get(code) ?? 0) + (reachObj.get(code) ?? 0) < k) return false;
+    if (vDiag && touchingVictim() === 0 && !canTouchVictim) return false;
 
     const i = best;
     for (const cell of bestCells) {
@@ -113,6 +136,8 @@ export function solve(p: Puzzle, opts: SolveOptions = {}): Placement[] {
       const rid = roomAt(p, cell);
       room[i] = rid;
       occ.set(rid, (occ.get(rid) ?? 0) + 1);
+      const code = objectAt(p, cell);
+      onObj.set(code, (onObj.get(code) ?? 0) + 1);
       usedRows |= 1 << cell.r;
       usedCols |= 1 << cell.c;
 
@@ -120,6 +145,7 @@ export function solve(p: Puzzle, opts: SolveOptions = {}): Placement[] {
 
       usedRows &= ~(1 << cell.r);
       usedCols &= ~(1 << cell.c);
+      onObj.set(code, onObj.get(code)! - 1);
       occ.set(rid, occ.get(rid)! - 1);
       room[i] = null;
       pos[i] = null;
@@ -135,12 +161,30 @@ export function countSolutions(p: Puzzle, limit = 2, domains?: Record<string, Ce
   return solve(p, { limit, domains }).length;
 }
 
-/** El asesino: el sospechoso que está en la misma habitación que la víctima. */
+const isDiag = (a: Cell, b: Cell) => Math.abs(a.r - b.r) === 1 && Math.abs(a.c - b.c) === 1;
+
+/** El asesino según la regla del crimen del caso, o null si la ubicación no deja exactamente uno. */
 export function killerOf(p: Puzzle, sol: Placement): string | null {
   const victim = p.people.find((x) => x.role === 'victim')!;
-  const vr = roomAt(p, sol[victim.id]);
-  const inRoom = p.people.filter((x) => x.role === 'suspect' && sol[x.id] && roomAt(p, sol[x.id]) === vr);
+  const v = sol[victim.id];
+  if (!v) return null;
+  const others = p.people.filter((x) => x.id !== victim.id && sol[x.id]);
+  if ((p.crime ?? 'aloneWithVictim') === 'touchingVictim') {
+    const near = others.filter((x) => isDiag(sol[x.id], v));
+    return near.length === 1 ? near[0].id : null;
+  }
+  const inRoom = others.filter((x) => roomAt(p, sol[x.id]) === roomAt(p, v));
   return inRoom.length === 1 ? inRoom[0].id : null;
+}
+
+/** Hechos generales que una ubicación completa no cumple (para mostrar al jugador). */
+export function factViolations(p: Puzzle, sol: Placement): number[] {
+  const placed = p.people.filter((x) => sol[x.id]).map((x) => sol[x.id]);
+  const complete = placed.length === p.people.length;
+  return (p.facts ?? []).flatMap(({ fact }, i) => {
+    const count = placed.filter((c) => (fact[0] === 'roomCount' ? roomAt(p, c) : objectAt(p, c)) === fact[1]).length;
+    return count > fact[2] || (complete && count !== fact[2]) ? [i] : [];
+  });
 }
 
 /** Verifica una ubicación completa contra todas las reglas. Devuelve los ids de quienes incumplen algo. */

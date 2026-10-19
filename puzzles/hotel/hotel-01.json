@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 2,
   "id": "hotel-01",
   "theme": "hotel",
   "title": "Corte de luz en el Gran Hotel",
@@ -33,6 +34,7 @@
       "name": "Don Ruiz",
       "role": "victim",
       "avatar": "🎩",
+      "gender": "m",
       "clue": {
         "rules": [
           [
@@ -47,6 +49,7 @@
       "name": "Ana",
       "role": "suspect",
       "avatar": "🛎️",
+      "gender": "f",
       "clue": {
         "rules": [
           [
@@ -61,6 +64,7 @@
       "name": "Bruno",
       "role": "suspect",
       "avatar": "🍸",
+      "gender": "m",
       "clue": {
         "rules": [
           [
@@ -75,6 +79,7 @@
       "name": "Clara",
       "role": "suspect",
       "avatar": "👒",
+      "gender": "f",
       "clue": {
         "rules": [
           [
@@ -89,6 +94,7 @@
       "name": "Diego",
       "role": "suspect",
       "avatar": "🔪",
+      "gender": "m",
       "clue": {
         "rules": [
           [

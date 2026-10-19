@@ -2,13 +2,15 @@
 // Uso: npm run validate [-- archivo.json ...]
 import { TECHNIQUE_NAME, clueText, deduce, estimateDifficulty, killerOf, solve, structuralErrors, type Technique } from '../src/engine';
 import { loadPuzzles, readPuzzle } from './lib';
+import { schemaErrors } from './schema';
 
 const files = process.argv.slice(2);
 const entries = files.length ? files.map((file) => ({ file, puzzle: readPuzzle(file) })) : loadPuzzles();
 let failed = 0;
 
 for (const { file, puzzle: p } of entries) {
-  const errs = structuralErrors(p);
+  const shape = schemaErrors(p);
+  const errs = shape.length ? shape : structuralErrors(p);
   const t0 = performance.now();
   const sols = errs.length ? [] : solve(p, { limit: 2 });
   const ms = Math.round(performance.now() - t0);

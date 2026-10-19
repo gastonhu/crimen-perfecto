@@ -1,9 +1,10 @@
 {
+  "schemaVersion": 2,
   "id": "tren-01",
   "theme": "tren",
   "title": "Expreso de medianoche",
   "size": 6,
-  "difficulty": 4,
+  "difficulty": 3,
   "story": "El tren nocturno cruza la Quebrada sin paradas. Al amanecer, el Conde Vidal aparece muerto en su camarote. Seis pasajeros, siete vagones y ninguna escapatoria.",
   "epilogue": "{killer} esperó a que el tren entrara al túnel para visitar al Conde. Pero alguien siempre está despierto en un tren nocturno.",
   "rooms": [
@@ -37,6 +38,7 @@
       "name": "Conde Vidal",
       "role": "victim",
       "avatar": "🧐",
+      "gender": "m",
       "clue": {
         "rules": [
           [
@@ -51,6 +53,7 @@
       "name": "Lucía",
       "role": "suspect",
       "avatar": "💁‍♀️",
+      "gender": "f",
       "clue": {
         "rules": [
           [
@@ -65,6 +68,7 @@
       "name": "Marcos",
       "role": "suspect",
       "avatar": "🤵",
+      "gender": "m",
       "clue": {
         "rules": [
           [
@@ -78,6 +82,7 @@
       "name": "Olga",
       "role": "suspect",
       "avatar": "🧶",
+      "gender": "f",
       "clue": {
         "rules": [
           [
@@ -92,6 +97,7 @@
       "name": "Pablo",
       "role": "suspect",
       "avatar": "🕶️",
+      "gender": "m",
       "clue": {
         "rules": [
           [
@@ -106,6 +112,7 @@
       "name": "Rita",
       "role": "suspect",
       "avatar": "🎤",
+      "gender": "f",
       "clue": {
         "rules": [
           [

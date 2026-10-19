@@ -1,9 +1,10 @@
 {
+  "schemaVersion": 2,
   "id": "datacenter-01",
   "theme": "datacenter",
   "title": "Root caído",
   "size": 7,
-  "difficulty": 4,
+  "difficulty": 5,
   "story": "Domingo, 3:12 AM. Saltan las alarmas del datacenter y el sysadmin Ramiro aparece muerto entre los racks. Los logs de acceso fueron borrados, pero cada persona recuerda dónde estaba.",
   "epilogue": "{killer} tenía credenciales, motivo y oportunidad. Lo que no tenía era una coartada que resistiera la lógica.",
   "rooms": [
@@ -39,6 +40,7 @@
       "name": "Ramiro",
       "role": "victim",
       "avatar": "🧑‍💻",
+      "gender": "m",
       "clue": {
         "rules": [
           [
@@ -52,6 +54,7 @@
       "name": "Sofía",
       "role": "suspect",
       "avatar": "👩‍💼",
+      "gender": "f",
       "clue": {
         "rules": [
           [
@@ -66,6 +69,7 @@
       "name": "Tomás",
       "role": "suspect",
       "avatar": "🧑‍🎓",
+      "gender": "m",
       "clue": {
         "rules": [
           [
@@ -80,6 +84,7 @@
       "name": "Valeria",
       "role": "suspect",
       "avatar": "🥷",
+      "gender": "f",
       "clue": {
         "rules": [
           [
@@ -94,6 +99,7 @@
       "name": "Hugo",
       "role": "suspect",
       "avatar": "💂",
+      "gender": "m",
       "clue": {
         "rules": [
           [
@@ -108,6 +114,7 @@
       "name": "Inés",
       "role": "suspect",
       "avatar": "🗃️",
+      "gender": "f",
       "clue": {
         "rules": [
           [
@@ -122,6 +129,7 @@
       "name": "Julián",
       "role": "suspect",
       "avatar": "📦",
+      "gender": "m",
       "clue": {
         "rules": [
           [

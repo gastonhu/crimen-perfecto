@@ -1,8 +1,8 @@
 // Generación de pistas: a partir de un plano y una solución elegida, busca pistas verdaderas hasta que la
 // solución sea única. Lo usan el script `suggest` y (más adelante) el editor de casos.
-import { isBlocked, isOnEdge, neighbors, objectAt, roomAt, roomIds, structuralErrors } from './board';
+import { hasDoor, hasWindow, isBlocked, isOnEdge, neighbors, objectAt, roomAt, roomIds, structuralErrors } from './board';
 import { propagate } from './deduce';
-import { countSolutions, killerOf, solve } from './solver';
+import { countSolutions, factViolations, killerOf, solve } from './solver';
 import { OBJECTS, type ObjectCode, type Placement, type Puzzle, type Rule } from './types';
 
 /** Generador pseudoaleatorio determinístico (mulberry32). */
@@ -28,8 +28,14 @@ export function draftErrors(p: Puzzle, solution: Placement): string[] {
   if (new Set(cells.map((c) => c.r)).size !== p.size || new Set(cells.map((c) => c.c)).size !== p.size)
     errs.push('la solución repite fila o columna');
   for (const x of p.people) if (solution[x.id] && isBlocked(p, solution[x.id])) errs.push(`${x.id} está sobre un mueble`);
-  if (!errs.length && !killerOf(p, solution)) errs.push('la víctima no queda a solas con exactamente un sospechoso');
-  if (!errs.length) {
+  if (!errs.length && !killerOf(p, solution))
+    errs.push(
+      p.crime === 'touchingVictim'
+        ? 'tiene que haber exactamente una persona pegada en diagonal a la víctima'
+        : 'la víctima no queda a solas con exactamente un sospechoso',
+    );
+  if (!errs.length && factViolations(p, solution).length) errs.push('la solución no cumple algún hecho general');
+  if (!errs.length && (p.crime ?? 'aloneWithVictim') === 'aloneWithVictim') {
     const victim = p.people.find((x) => x.role === 'victim')!;
     const vr = roomAt(p, solution[victim.id]);
     if (p.people.filter((x) => roomAt(p, solution[x.id]) === vr).length !== 2)
@@ -69,6 +75,14 @@ export function candidateRules(p: Puzzle, solution: Placement, id: string): Cand
     out.push({ rule: [c.c < oc.c ? 'westOf' : 'eastOf', o.id], interest: 2 });
   }
   out.push({ rule: occ === 0 ? ['alone'] : ['withExactly', occ], interest: 3 });
+  for (const o of p.people) {
+    if (o.id === id) continue;
+    const oc = solution[o.id];
+    const touching = Math.abs(oc.r - c.r) === 1 && Math.abs(oc.c - c.c) === 1;
+    out.push({ rule: [touching ? 'touching' : 'notTouching', o.id], interest: touching ? 3 : 1 });
+  }
+  if (p.windows?.length) out.push({ rule: hasWindow(p, c) ? ['byWindow'] : ['notByWindow'], interest: hasWindow(p, c) ? 4 : 1 });
+  if (p.doors?.length) out.push({ rule: hasDoor(p, c) ? ['byDoor'] : ['notByDoor'], interest: hasDoor(p, c) ? 4 : 1 });
   return out;
 }
 

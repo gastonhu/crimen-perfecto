@@ -1,8 +1,11 @@
-import { isBlocked, isOnEdge, neighbors, objectAt, roomAt } from './board';
-import { OBJECTS, type Cell, type ObjectCode, type Person, type Puzzle, type Rule } from './types';
+import { hasDoor, hasWindow, isBlocked, isOnEdge, neighbors, objectAt, roomAt } from './board';
+import { OBJECTS, type Cell, type Fact, type ObjectCode, type Person, type Puzzle, type Rule } from './types';
 
-const UNARY = new Set(['inRoom', 'notInRoom', 'onObject', 'notOnObject', 'adjacentTo', 'notAdjacentTo', 'onEdge', 'notOnEdge', 'row', 'col']);
-const RELATIONAL = new Set(['sameRoomAs', 'notSameRoomAs', 'northOf', 'southOf', 'eastOf', 'westOf']);
+const UNARY = new Set([
+  'inRoom', 'notInRoom', 'onObject', 'notOnObject', 'adjacentTo', 'notAdjacentTo', 'onEdge', 'notOnEdge', 'row', 'col',
+  'byWindow', 'notByWindow', 'byDoor', 'notByDoor',
+]);
+const RELATIONAL = new Set(['sameRoomAs', 'notSameRoomAs', 'northOf', 'southOf', 'eastOf', 'westOf', 'touching', 'notTouching']);
 
 export const isUnary = (r: Rule) => UNARY.has(r[0]);
 export const isRelational = (r: Rule) => RELATIONAL.has(r[0]);
@@ -33,6 +36,14 @@ export function evalUnary(p: Puzzle, rule: Rule, c: Cell): boolean {
       return c.r === rule[1] - 1;
     case 'col':
       return c.c === rule[1] - 1;
+    case 'byWindow':
+      return hasWindow(p, c);
+    case 'notByWindow':
+      return !hasWindow(p, c);
+    case 'byDoor':
+      return hasDoor(p, c);
+    case 'notByDoor':
+      return !hasDoor(p, c);
     default:
       return true;
   }
@@ -53,6 +64,10 @@ export function evalRelational(p: Puzzle, rule: Rule, self: Cell, other: Cell): 
       return self.c < other.c;
     case 'eastOf':
       return self.c > other.c;
+    case 'touching':
+      return Math.abs(self.r - other.r) === 1 && Math.abs(self.c - other.c) === 1;
+    case 'notTouching':
+      return !(Math.abs(self.r - other.r) === 1 && Math.abs(self.c - other.c) === 1);
     default:
       return true;
   }
@@ -84,7 +99,10 @@ function objIndef(code: ObjectCode): string {
   return code === '.' ? 'el piso' : OBJECTS[code].indef;
 }
 
-export function describeRule(p: Puzzle, rule: Rule): string {
+/** Elige la forma según el género de quien habla (neutra si no hay dato). */
+const g = (who: Person | undefined, f: string, m: string, x: string) => (who?.gender === 'f' ? f : who?.gender === 'm' ? m : x);
+
+export function describeRule(p: Puzzle, rule: Rule, who?: Person): string {
   const name = (id: string) => p.people.find((x) => x.id === id)?.name ?? id;
   switch (rule[0]) {
     case 'inRoom':
@@ -119,17 +137,46 @@ export function describeRule(p: Puzzle, rule: Rule): string {
       return `estaba más al este que ${name(rule[1])}`;
     case 'westOf':
       return `estaba más al oeste que ${name(rule[1])}`;
+    case 'touching':
+      return who?.gender
+        ? `estaba ${g(who, 'pegada', 'pegado', '')} a ${name(rule[1])}, en diagonal`
+        : `estaba en diagonal, junto a ${name(rule[1])}`;
+    case 'notTouching':
+      return `no estaba en diagonal junto a ${name(rule[1])}`;
+    case 'byWindow':
+      return 'estaba junto a una ventana';
+    case 'notByWindow':
+      return 'no estaba junto a ninguna ventana';
+    case 'byDoor':
+      return 'estaba junto a una puerta';
+    case 'notByDoor':
+      return 'no estaba junto a ninguna puerta';
     case 'alone':
-      return 'estaba sin compañía en su habitación';
+      return `estaba ${g(who, 'sola', 'solo', 'sin compañía')} en su habitación`;
     case 'withExactly':
       return `compartía la habitación con exactamente ${rule[1]} ${rule[1] === 1 ? 'persona' : 'personas'}`;
   }
 }
 
+const isFem = (roomName: string) => /^(la|las)\s/i.test(roomName);
+
+export function describeFact(p: Puzzle, fact: Fact): string {
+  const n = fact[2];
+  if (fact[0] === 'roomCount') {
+    const room = p.roomNames[fact[1]] ?? fact[1];
+    if (n === 0) return cap(`${room} estaba ${isFem(room) ? 'vacía' : 'vacío'}.`);
+    return `En ${room} había exactamente ${n} ${n === 1 ? 'persona' : 'personas'}.`;
+  }
+  const info = fact[1] === '.' ? null : OBJECTS[fact[1]];
+  const obj = info ? info.indef : 'el piso';
+  if (n === 0) return `Nadie estaba en ${obj}.`;
+  return `Exactamente ${n === 1 ? 'una persona estaba' : `${n} personas estaban`} en ${n === 1 ? obj : (info?.plural ?? obj)}.`;
+}
+
 /** Une varias reglas en una frase: "Estaba en el Bar y junto a una planta." */
-export function describeClue(p: Puzzle, rules: Rule[]): string {
+export function describeClue(p: Puzzle, rules: Rule[], who?: Person): string {
   const parts = rules.map((r, i) => {
-    const s = describeRule(p, r);
+    const s = describeRule(p, r, who);
     return i > 0 && s.startsWith('estaba ') ? s.slice('estaba '.length) : s;
   });
   if (parts.length === 0) return 'No recuerda nada.';
@@ -138,5 +185,5 @@ export function describeClue(p: Puzzle, rules: Rule[]): string {
 }
 
 export function clueText(p: Puzzle, person: Person): string {
-  return person.clue.text ?? describeClue(p, person.clue.rules);
+  return person.clue.text ?? describeClue(p, person.clue.rules, person);
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { countSolutions, describeClue, estimateDifficulty, killerOf, nextHint, solve, structuralErrors, violations } from '.';
+import { countSolutions, describeClue, describeFact, estimateDifficulty, killerOf, nextHint, solve, structuralErrors, violations } from '.';
 import type { Puzzle } from './types';
 
 const load = (f: string): Puzzle => JSON.parse(readFileSync(new URL(`../../puzzles/${f}`, import.meta.url), 'utf8'));
@@ -79,5 +79,77 @@ describe('texto', () => {
   it('une reglas en una frase', () => {
     const p = load('hotel/hotel-01.json');
     expect(describeClue(p, [['inRoom', 'B'], ['adjacentTo', 'P']])).toBe('Estaba en el bar y junto a una planta.');
+  });
+});
+
+describe('DSL ampliada', () => {
+  const base = (over: Partial<Puzzle> = {}): Puzzle => ({
+    id: 'x', theme: 'test', title: 'x', size: 3, difficulty: 1, story: '',
+    rooms: ['AAA', 'BBB', 'BBB'],
+    roomNames: { A: 'la cocina', B: 'el bar' },
+    objects: ['C..', '...', '..B'],
+    people: [
+      { id: 'v', name: 'Vera', role: 'victim', avatar: '', gender: 'f', clue: { rules: [] } },
+      { id: 'x', name: 'Xavi', role: 'suspect', avatar: '', gender: 'm', clue: { rules: [] } },
+      { id: 'y', name: 'Yael', role: 'suspect', avatar: '', clue: { rules: [] } },
+    ],
+    ...over,
+  });
+
+  it('concuerda el género en los textos', () => {
+    const p = base();
+    expect(describeClue(p, [['alone']], p.people[0])).toBe('Estaba sola en su habitación.');
+    expect(describeClue(p, [['alone']], p.people[1])).toBe('Estaba solo en su habitación.');
+    expect(describeClue(p, [['alone']], p.people[2])).toBe('Estaba sin compañía en su habitación.');
+    expect(describeClue(p, [['touching', 'v']], p.people[1])).toBe('Estaba pegado a Vera, en diagonal.');
+  });
+
+  it('describe hechos generales', () => {
+    const p = base();
+    expect(describeFact(p, ['roomCount', 'A', 0])).toBe('La cocina estaba vacía.');
+    expect(describeFact(p, ['roomCount', 'B', 0])).toBe('El bar estaba vacío.');
+    expect(describeFact(p, ['roomCount', 'B', 2])).toBe('En el bar había exactamente 2 personas.');
+    expect(describeFact(p, ['objectCount', 'C', 1])).toBe('Exactamente una persona estaba en una silla.');
+    expect(describeFact(p, ['objectCount', 'C', 2])).toBe('Exactamente 2 personas estaban en sillas.');
+  });
+
+  it('un hecho general puede definir la solución', () => {
+    const p = base({ facts: [{ fact: ['roomCount', 'A', 0] }] });
+    expect(solve(p, { limit: 50 }).length).toBe(0); // 3 personas no entran en 2 filas: el hecho lo hace imposible
+    // "En la cocina había exactamente 1 persona" → el crimen (2 personas) fue en el bar.
+    const q = base({ facts: [{ fact: ['roomCount', 'A', 1] }] });
+    expect(solve(q, { limit: 50 }).length).toBeGreaterThan(0);
+    for (const sol of solve(q, { limit: 50 })) {
+      expect(Object.values(sol).filter((c) => c.r === 0)).toHaveLength(1);
+      expect(sol.v.r).toBeGreaterThan(0);
+    }
+  });
+
+  it('ventanas y puertas', () => {
+    const p = base({ windows: ['A1N'], doors: ['B1S'], people: base().people.map((x) => (x.id === 'x' ? { ...x, clue: { rules: [['byWindow']] } } : x)) });
+    expect(structuralErrors(p)).toEqual([]);
+    expect(solve(p, { limit: 50 }).length).toBeGreaterThan(0);
+    for (const sol of solve(p, { limit: 50 })) expect(sol.x).toEqual({ r: 0, c: 0 });
+    expect(structuralErrors(base({ windows: ['B2N'] }))).toContain("la ventana 'B2N' no está en una pared exterior");
+    expect(structuralErrors(base({ doors: ['A2E'] }))).toContain("la puerta 'A2E' no separa dos habitaciones");
+  });
+
+  it('regla del crimen en diagonal', () => {
+    const p = base({ crime: 'touchingVictim', rooms: ['AAA', 'AAA', 'AAA'], roomNames: { A: 'la sala' } });
+    expect(solve(p, { limit: 50 }).length).toBeGreaterThan(0);
+    for (const sol of solve(p, { limit: 50 })) {
+      const k = killerOf(p, sol);
+      expect(k).not.toBeNull();
+      expect(Math.abs(sol[k!].r - sol.v.r)).toBe(1);
+      expect(Math.abs(sol[k!].c - sol.v.c)).toBe(1);
+    }
+  });
+});
+
+describe('esquema de archivos', () => {
+  it('todos los casos publicados cumplen el esquema v2', async () => {
+    const { schemaErrors } = await import('../../scripts/schema');
+    const { loadPuzzles } = await import('../../scripts/lib');
+    for (const { file, puzzle } of loadPuzzles()) expect(schemaErrors(puzzle), file).toEqual([]);
   });
 });

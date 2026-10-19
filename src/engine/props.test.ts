@@ -22,6 +22,15 @@ function refHolds(p: Puzzle, sol: Placement, selfId: string, rule: Rule): boolea
   ].filter(([r, c]) => r >= 0 && c >= 0 && r < n && c < n);
   const occupants = (rid: string) => p.people.filter((x) => room(sol[x.id].r, sol[x.id].c) === rid).length;
   const other = (id: string) => sol[id];
+  const diag = (a: { r: number; c: number }, b: { r: number; c: number }) => Math.abs(a.r - b.r) === 1 && Math.abs(a.c - b.c) === 1;
+  // Ventanas y puertas: "B1N" = casilla B1, lado norte. Una puerta vale para las dos casillas que separa.
+  const touchesRef = (refs: string[] = [], both: boolean) =>
+    refs.some((ref) => {
+      const r = Number(ref[1]) - 1;
+      const c = ref.charCodeAt(0) - 65;
+      const [dr, dc] = { N: [-1, 0], S: [1, 0], E: [0, 1], O: [0, -1] }[ref[2] as 'N']!;
+      return (me.r === r && me.c === c) || (both && me.r === r + dr && me.c === c + dc);
+    });
   switch (rule[0]) {
     case 'inRoom': return room(me.r, me.c) === rule[1];
     case 'notInRoom': return room(me.r, me.c) !== rule[1];
@@ -39,6 +48,12 @@ function refHolds(p: Puzzle, sol: Placement, selfId: string, rule: Rule): boolea
     case 'southOf': return me.r > other(rule[1]).r;
     case 'westOf': return me.c < other(rule[1]).c;
     case 'eastOf': return me.c > other(rule[1]).c;
+    case 'touching': return diag(me, other(rule[1]));
+    case 'notTouching': return !diag(me, other(rule[1]));
+    case 'byWindow': return touchesRef(p.windows, false);
+    case 'notByWindow': return !touchesRef(p.windows, false);
+    case 'byDoor': return touchesRef(p.doors, true);
+    case 'notByDoor': return !touchesRef(p.doors, true);
     case 'alone': return occupants(room(me.r, me.c)) === 1;
     case 'withExactly': return occupants(room(me.r, me.c)) - 1 === rule[1];
   }
@@ -49,8 +64,15 @@ function refIsSolution(p: Puzzle, sol: Placement): boolean {
   if (new Set(cells.map((c) => c.r)).size !== p.size || new Set(cells.map((c) => c.c)).size !== p.size) return false;
   if (cells.some((c) => BLOCKING.has(p.objects[c.r][c.c]))) return false;
   const victim = p.people.find((x) => x.role === 'victim')!;
-  const vr = p.rooms[sol[victim.id].r][sol[victim.id].c];
-  if (p.people.filter((x) => p.rooms[sol[x.id].r][sol[x.id].c] === vr).length !== 2) return false;
+  const v = sol[victim.id];
+  if (p.crime === 'touchingVictim') {
+    const near = p.people.filter((x) => x.id !== victim.id && Math.abs(sol[x.id].r - v.r) === 1 && Math.abs(sol[x.id].c - v.c) === 1);
+    if (near.length !== 1) return false;
+  } else if (p.people.filter((x) => p.rooms[sol[x.id].r][sol[x.id].c] === p.rooms[v.r][v.c]).length !== 2) return false;
+  for (const { fact } of p.facts ?? []) {
+    const count = cells.filter((c) => (fact[0] === 'roomCount' ? p.rooms[c.r][c.c] : p.objects[c.r][c.c]) === fact[1]).length;
+    if (count !== fact[2]) return false;
+  }
   return p.people.every((x) => x.clue.rules.every((rule) => refHolds(p, sol, x.id, rule)));
 }
 
@@ -83,9 +105,12 @@ const puzzleArb = fc.integer({ min: 3, max: 5 }).chain((n) =>
     .record({
       seeds: fc.array(fc.tuple(fc.nat(n - 1), fc.nat(n - 1)), { minLength: 2, maxLength: 4 }),
       objects: fc.array(fc.constantFrom(...OBJ), { minLength: n * n, maxLength: n * n }),
-      clues: fc.array(fc.array(fc.tuple(fc.nat(17), fc.nat(20)), { maxLength: 2 }), { minLength: n, maxLength: n }),
+      clues: fc.array(fc.array(fc.tuple(fc.nat(23), fc.nat(20)), { maxLength: 2 }), { minLength: n, maxLength: n }),
+      sides: fc.array(fc.tuple(fc.nat(n - 1), fc.nat(n - 1), fc.constantFrom('N', 'S', 'E', 'O')), { maxLength: 4 }),
+      facts: fc.array(fc.tuple(fc.boolean(), fc.nat(3), fc.nat(n)), { maxLength: 2 }),
+      touching: fc.boolean(),
     })
-    .map(({ seeds, objects, clues }): Puzzle => {
+    .map(({ seeds, objects, clues, sides, facts, touching }): Puzzle => {
       const letters = 'ABCD';
       const rooms = Array.from({ length: n }, (_, r) =>
         Array.from({ length: n }, (_, c) => {
@@ -107,7 +132,8 @@ const puzzleArb = fc.integer({ min: 3, max: 5 }).chain((n) =>
           ['inRoom', room], ['notInRoom', room], ['onObject', objc], ['notOnObject', objc], ['adjacentTo', objc],
           ['notAdjacentTo', objc], ['onEdge'], ['notOnEdge'], ['row', (arg % n) + 1], ['col', (arg % n) + 1],
           ['sameRoomAs', other], ['notSameRoomAs', other], ['northOf', other], ['southOf', other], ['eastOf', other],
-          ['westOf', other], ['alone'], ['withExactly', arg % 3],
+          ['westOf', other], ['alone'], ['withExactly', arg % 3], ['touching', other], ['notTouching', other],
+          ['byWindow'], ['notByWindow'], ['byDoor'], ['notByDoor'],
         ];
         return kinds[kind];
       };
@@ -116,6 +142,24 @@ const puzzleArb = fc.integer({ min: 3, max: 5 }).chain((n) =>
         rooms,
         roomNames: Object.fromEntries(roomList.map((l) => [l, `la sala ${l}`])),
         objects: Array.from({ length: n }, (_, r) => objects.slice(r * n, r * n + n).join('')),
+        ...(() => {
+          // Ventanas en lados exteriores y puertas entre habitaciones distintas (descarta las inválidas).
+          const windows: string[] = [];
+          const doors: string[] = [];
+          for (const [r, c, side] of sides) {
+            const [dr, dc] = { N: [-1, 0], S: [1, 0], E: [0, 1], O: [0, -1] }[side as 'N']!;
+            const ref = `${String.fromCharCode(65 + c)}${r + 1}${side}`;
+            const nr = r + dr;
+            const nc = c + dc;
+            if (nr < 0 || nc < 0 || nr >= n || nc >= n) windows.push(ref);
+            else if (rooms[nr][nc] !== rooms[r][c]) doors.push(ref);
+          }
+          return { windows, doors };
+        })(),
+        facts: facts.map(([isRoom, k, count]) => ({
+          fact: isRoom ? ['roomCount', roomList[k % roomList.length], count] : ['objectCount', (['C', 'B', 'R'] as const)[k % 3], count],
+        })),
+        crime: touching ? 'touchingVictim' : undefined,
         people: ids.map((id, i) => ({
           id, name: id.toUpperCase(), avatar: '', role: i === 0 ? 'victim' : 'suspect',
           clue: { rules: clues[i].map((c) => mkRule(c, id)) },

@@ -1,12 +1,12 @@
 // Deducción "humana" y explicable. Cada paso aplica una técnica, descarta casillas y explica por qué.
 // La dificultad de un caso es la técnica más difícil que hace falta para resolverlo.
-import { cellKey, isBlocked, roomAt } from './board';
-import { colLabel, describeRule, evalRelational, evalUnary, isRelational, isRoomCount, isUnary, roomCompanions, unaryDomain } from './clues';
+import { cellKey, diagonals, isBlocked, objectAt, roomAt } from './board';
+import { colLabel, describeFact, describeRule, evalRelational, evalUnary, isRelational, isRoomCount, isUnary, roomCompanions, unaryDomain } from './clues';
 import type { Cell, Placement, Puzzle } from './types';
 
 export type Domains = Record<string, Cell[]>;
 
-export type Technique = 'single' | 'hiddenSingle' | 'line' | 'clue' | 'relation' | 'capacity' | 'subset' | 'hypothesis';
+export type Technique = 'single' | 'hiddenSingle' | 'line' | 'clue' | 'relation' | 'capacity' | 'fact' | 'crime' | 'subset' | 'hypothesis';
 
 /** Nivel de dificultad (1–5) de cada técnica. */
 export const TECHNIQUE_LEVEL: Record<Technique, number> = {
@@ -16,6 +16,8 @@ export const TECHNIQUE_LEVEL: Record<Technique, number> = {
   clue: 1,
   relation: 2,
   capacity: 3,
+  fact: 3,
+  crime: 3,
   subset: 4,
   hypothesis: 5,
 };
@@ -27,6 +29,8 @@ export const TECHNIQUE_NAME: Record<Technique, string> = {
   clue: 'Pista directa',
   relation: 'Pista relativa',
   capacity: 'Gente por habitación',
+  fact: 'Hecho general',
+  crime: 'Regla del crimen',
   subset: 'Grupo cerrado',
   hypothesis: 'Hipótesis',
 };
@@ -68,7 +72,10 @@ function requirements(p: Puzzle): Map<string, number[]> {
   return new Map(
     p.people.map((x) => [
       x.id,
-      [...(x.role === 'victim' ? [1] : []), ...x.clue.rules.filter(isRoomCount).map(roomCompanions)],
+      [
+        ...(x.role === 'victim' && (p.crime ?? 'aloneWithVictim') === 'aloneWithVictim' ? [1] : []),
+        ...x.clue.rules.filter(isRoomCount).map(roomCompanions),
+      ],
     ]),
   );
 }
@@ -284,6 +291,81 @@ function capacity(c: Ctx, d: Domains): Step | null {
   return null;
 }
 
+/** Hechos generales: "en la cocina había N personas", "N personas estaban en sillas". */
+function fact(c: Ctx, d: Domains): Step | null {
+  const { p } = c;
+  const ids = p.people.map((x) => x.id);
+  for (const { fact: f } of p.facts ?? []) {
+    const inZone = (cell: Cell) => (f[0] === 'roomCount' ? roomAt(p, cell) : objectAt(p, cell)) === f[1];
+    const must = ids.filter((id) => d[id].length > 0 && d[id].every(inZone));
+    const could = ids.filter((id) => d[id].some(inZone));
+    const text = describeFact(p, f).replace(/\.$/, '');
+    if (must.length === f[2]) {
+      const keep: Record<string, (cell: Cell) => boolean> = {};
+      for (const id of ids) if (!must.includes(id)) keep[id] = (cell) => !inZone(cell);
+      const s = stepFrom(
+        d,
+        'fact',
+        must.length
+          ? `${text}, y ya tienen que estar ${names(must.map(c.name))}: nadie más.`
+          : `${text}: nadie puede estar ahí.`,
+        must.flatMap((id) => d[id]),
+        keep,
+      );
+      if (s) return s;
+    }
+    if (could.length === f[2]) {
+      const keep: Record<string, (cell: Cell) => boolean> = {};
+      for (const id of could) keep[id] = inZone;
+      const s = stepFrom(
+        d,
+        'fact',
+        `${text}, y las únicas personas que pueden cumplirlo son ${names(could.map(c.name))}.`,
+        could.flatMap((id) => d[id].filter(inZone)),
+        keep,
+      );
+      if (s) return s;
+    }
+  }
+  return null;
+}
+
+/** Regla del crimen "pegado en diagonal": exactamente una persona en las diagonales de la víctima. */
+function crime(c: Ctx, d: Domains): Step | null {
+  const { p } = c;
+  if ((p.crime ?? 'aloneWithVictim') !== 'touchingVictim') return null;
+  const victim = p.people.find((x) => x.role === 'victim')!;
+  if (d[victim.id].length !== 1) return null;
+  const diag = diagonals(p, d[victim.id][0]);
+  const near = (cell: Cell) => diag.some((v) => v.r === cell.r && v.c === cell.c);
+  const others = p.people.filter((x) => x.id !== victim.id).map((x) => x.id);
+  const must = others.filter((id) => d[id].length > 0 && d[id].every(near));
+  const could = others.filter((id) => d[id].some(near));
+  if (must.length === 1) {
+    const keep: Record<string, (cell: Cell) => boolean> = {};
+    for (const id of others) if (id !== must[0]) keep[id] = (cell) => !near(cell);
+    const s = stepFrom(
+      d,
+      'crime',
+      `El asesino es la única persona pegada en diagonal a ${c.name(victim.id)}, y ${c.name(must[0])} tiene que estar ahí: nadie más.`,
+      diag,
+      keep,
+    );
+    if (s) return s;
+  }
+  if (could.length === 1) {
+    const s = stepFrom(
+      d,
+      'crime',
+      `Alguien tuvo que estar pegado en diagonal a ${c.name(victim.id)}, y la única persona que puede es ${c.name(could[0])}.`,
+      diag,
+      { [could[0]]: near },
+    );
+    if (s) return s;
+  }
+  return null;
+}
+
 function subset(c: Ctx, d: Domains): Step | null {
   const ids = c.p.people.map((x) => x.id).filter((id) => d[id].length > 1);
   const combos = (k: number, from = 0): string[][] =>
@@ -351,6 +433,22 @@ export function contradiction(p: Puzzle, d: Domains): string | null {
       if (could < k + 1) return `no alcanzaría la gente en ${c.room(rid)}`;
     }
   }
+  for (const { fact: f } of p.facts ?? []) {
+    const inZone = (cell: Cell) => (f[0] === 'roomCount' ? roomAt(p, cell) : objectAt(p, cell)) === f[1];
+    const must = p.people.filter((x) => d[x.id].every(inZone)).length;
+    const could = p.people.filter((x) => d[x.id].some(inZone)).length;
+    if (must > f[2] || could < f[2]) return `no se cumpliría que ${describeFact(p, f).replace(/\.$/, '').replace(/^./, (ch) => ch.toLowerCase())}`;
+  }
+  if ((p.crime ?? 'aloneWithVictim') === 'touchingVictim') {
+    const victim = p.people.find((x) => x.role === 'victim')!;
+    if (d[victim.id].length === 1) {
+      const diag = diagonals(p, d[victim.id][0]);
+      const near = (cell: Cell) => diag.some((v) => v.r === cell.r && v.c === cell.c);
+      const others = p.people.filter((x) => x.id !== victim.id);
+      if (others.filter((x) => d[x.id].every(near)).length > 1) return `habría más de una persona pegada a ${c.name(victim.id)}`;
+      if (!others.some((x) => d[x.id].some(near))) return `nadie habría podido matar a ${c.name(victim.id)}`;
+    }
+  }
   return null;
 }
 
@@ -362,6 +460,8 @@ const BASIC: [Technique, TechniqueFn][] = [
   ['clue', clue],
   ['relation', relation],
   ['capacity', capacity],
+  ['fact', fact],
+  ['crime', crime],
   ['subset', subset],
 ];
 
