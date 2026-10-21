@@ -24,7 +24,7 @@ function JsonBox({ title, file, text, note }: { title: string; file: string; tex
             setTimeout(() => setCopied(null), 2000);
           }}
         >
-          {copied === 'ok' ? '✓ Copiado' : copied === 'fail' ? 'No se pudo: seleccionalo a mano' : '📋 Copiar'}
+          {copied === 'ok' ? '✓ Copiado' : copied === 'fail' ? 'No se pudo: seleccionalo a mano' : 'Copiar'}
         </button>
         <button onClick={() => downloadText(file, text)}>⬇ Descargar {file}</button>
       </div>

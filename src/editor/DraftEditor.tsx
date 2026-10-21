@@ -15,6 +15,7 @@ import { CluesStep } from './steps/CluesStep';
 import { DataStep, dataIssues } from './steps/DataStep';
 import { PlayStep } from './steps/PlayStep';
 import { PublishStep } from './steps/PublishStep';
+import { Icon } from '../ui/Icon';
 
 const STEPS = [
   { id: 'plan', label: 'Plano' },
@@ -25,6 +26,8 @@ const STEPS = [
   { id: 'play', label: 'Probar' },
   { id: 'publish', label: 'Publicar' },
 ] as const;
+/** Los pasos se numeran en romanos, como los capítulos de un expediente. */
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 export type StepId = (typeof STEPS)[number]['id'];
 
 const EMPTY: History = { past: [], present: { draft: null!, pinned: [], seed: 1 }, future: [] };
@@ -190,10 +193,10 @@ export function DraftEditor({ draftKey, backend }: { draftKey: string; backend: 
         </div>
         <div className="ed-head-tools">
           <button className="ghost icon" onClick={() => dispatchH({ type: 'undo' })} disabled={!history.past.length} aria-label="Deshacer" title="Deshacer (Ctrl+Z)">
-            ↶
+            <Icon name="tool-undo" />
           </button>
           <button className="ghost icon" onClick={() => dispatchH({ type: 'redo' })} disabled={!history.future.length} aria-label="Rehacer" title="Rehacer (Ctrl+Shift+Z)">
-            ↷
+            <Icon name="tool-redo" />
           </button>
           <span className={`ed-save ${save}`} role="status" title={saveError ?? undefined}>
             {save === 'saved' ? '✓ Guardado' : save === 'saving' ? 'Guardando…' : '✗ No se guardó'}
@@ -225,7 +228,7 @@ export function DraftEditor({ draftKey, backend }: { draftKey: string; backend: 
             className={`ed-tab ${status[s.id]}`}
             onClick={() => setStep(s.id)}
           >
-            <span className="ed-tab-n">{i + 1}</span> {s.label}
+            <span className="ed-tab-n">{ROMAN[i]}.</span> {s.label}
             {status[s.id] === 'error' && <span className="ed-dot error" aria-label="con errores" />}
             {status[s.id] === 'warning' && <span className="ed-dot warning" aria-label="con avisos" />}
             {status[s.id] === 'ok' && <span className="ed-dot ok" aria-label="listo" />}

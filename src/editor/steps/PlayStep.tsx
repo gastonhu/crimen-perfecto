@@ -5,11 +5,14 @@ import { BoardView } from '../../ui/BoardView';
 import type { Board } from '../../ui/useGame';
 import { boardPuzzle, cellName, crossedBy, EMPTY_BOARD, type AnalysisCtx, type StepProps } from '../common';
 import { toPlacement } from '../draft';
+import { Icon, Monogram } from '../../ui/Icon';
+import { initials } from '../../ui/initials';
 
 type Verdict = { kind: 'incomplete'; missing: number } | { kind: 'right'; killer: string } | { kind: 'wrong'; wrong: number; valid: boolean };
 
 export function PlayStep({ doc, analysis, analysisFresh, blocked }: StepProps & AnalysisCtx) {
   const d = doc.draft;
+  const short = initials(d.people.map((x) => ({ ...x, name: x.name || x.id })));
   const p = useMemo(() => boardPuzzle(d), [d]);
   const sol = useMemo(() => toPlacement(d.solution), [d.solution]);
   const [board, setBoard] = useState<Board>(EMPTY_BOARD);
@@ -71,10 +74,10 @@ export function PlayStep({ doc, analysis, analysisFresh, blocked }: StepProps & 
         <div className="row ed-play-tools" role="toolbar" aria-label="Herramientas">
           <div className="segmented" role="group" aria-label="Modo">
             <button aria-pressed={mode === 'place'} onClick={() => setMode('place')}>
-              👤 Colocar
+              <Icon name="tool-place" /> Colocar
             </button>
             <button aria-pressed={mode === 'mark'} onClick={() => setMode('mark')}>
-              ✗ Marcar
+              <Icon name="mark-x" /> Marcar
             </button>
           </div>
           <button onClick={() => update(EMPTY_BOARD)}>Empezar de nuevo</button>
@@ -131,7 +134,7 @@ export function PlayStep({ doc, analysis, analysisFresh, blocked }: StepProps & 
             return (
               <li key={x.id} className={['person', x.role, selected === x.id && 'selected', at && 'placed', bad.has(x.id) && 'bad'].filter(Boolean).join(' ')}>
                 <button onClick={() => setSelected(x.id)} aria-pressed={selected === x.id}>
-                  <span className="avatar">{x.avatar}</span>
+                  <Monogram person={x} text={short.get(x.id) ?? ''} />
                   <span className="who">
                     <span className="name">
                       {x.name}

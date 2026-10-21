@@ -5,19 +5,20 @@ import type { Puzzle } from './engine';
 
 const modules = import.meta.glob<Puzzle>('../puzzles/**/*.json', { eager: true, import: 'default' });
 
+/** Temas conocidos. `icon` es el id de un símbolo del sprite (design/furniture-icons.svg). */
 export const THEMES: Record<string, { name: string; icon: string }> = {
-  hotel: { name: 'Hotel en tormenta', icon: '🏨' },
-  tren: { name: 'Tren nocturno', icon: '🚂' },
-  estancia: { name: 'Estancia tucumana', icon: '🐎' },
-  datacenter: { name: 'Datacenter hackeado', icon: '💾' },
-  cozy: { name: 'Misterios acogedores', icon: '🫖' },
+  hotel: { name: 'Hotel en tormenta', icon: 'theme-hotel' },
+  tren: { name: 'Tren nocturno', icon: 'theme-tren' },
+  estancia: { name: 'Estancia tucumana', icon: 'theme-estancia' },
+  datacenter: { name: 'Datacenter hackeado', icon: 'theme-datacenter' },
+  cozy: { name: 'Misterios acogedores', icon: 'theme-cozy' },
 };
 
 /** Nombre e ícono de un tema, también para temas nuevos creados desde el editor. */
 export function themeInfo(theme: string): { name: string; icon: string } {
   if (THEMES[theme]) return THEMES[theme];
   const name = theme.replace(/-/g, ' ');
-  return { name: name.charAt(0).toUpperCase() + name.slice(1), icon: '🗂️' };
+  return { name: name.charAt(0).toUpperCase() + name.slice(1), icon: 'theme-other' };
 }
 
 export function sortPuzzles(list: Puzzle[]): Puzzle[] {

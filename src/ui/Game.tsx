@@ -30,6 +30,9 @@ import { BoardView } from './BoardView';
 import { clueRefs } from './clueRefs';
 import { Dossier, crimeRuleText } from './Dossier';
 import { HintPanel } from './HintPanel';
+import { Icon, Monogram } from './Icon';
+import { initials } from './initials';
+import { themeInfo } from '../puzzles';
 import { useSettings } from './settings';
 import { sanitizeBoard, useGame, type Board, type SaveState } from './useGame';
 import { formatTime, shareText } from './format';
@@ -72,7 +75,7 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
   const [mode, setMode] = useState<Mode>('place');
   const [hint, setHint] = useState<Explanation | null>(null);
   const [hintFocus, setHintFocus] = useState<Cell[]>([]);
-  // Pista interactiva: `hover` sigue al mouse/foco; `pinned` lo fija el botón 👁 (para touch).
+  // Pista interactiva: `hover` sigue al mouse/foco; `pinned` lo fija el botón del ojo (para touch).
   const [hover, setHover] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
   const preview = hover ?? pinned;
@@ -211,6 +214,7 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
   });
 
   const name = (id?: string) => p.people.find((x) => x.id === id)?.name ?? '';
+  const short = useMemo(() => initials(p.people), [p.people]);
 
   const onCell = (cell: Cell, alt: boolean) => {
     if (solved) return;
@@ -378,11 +382,12 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
     <section className={`game ${revealing ? 'revealing' : ''}`}>
       <header className="game-head">
         <button className="ghost back" onClick={onExit} aria-label="Volver a los casos">
-          ←<span className="hide-sm"> Casos</span>
+          <Icon name="ui-back" />
+          <span className="hide-sm">Casos</span>
         </button>
         <div className="title">
           <span className="eyebrow">
-            Expediente · {p.size}×{p.size}
+            Expediente<span className="hide-sm"> · {themeInfo(p.theme).name}</span> · {p.size}×{p.size}
             {strict && <span className="chip strict-chip">Estricto</span>}
             {!solved && SAVE_LABEL[game.saveState] && (
               <span className={`chip save-chip ${game.saveState === 'saved' ? 'success' : game.saveState === 'saving' ? '' : 'danger'}`} role="status">
@@ -393,6 +398,7 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
           <h2>{p.title}</h2>
         </div>
         <div className="timer" aria-label="Tiempo">
+          <Icon name="ui-watch" />
           {formatTime(seconds)}
         </div>
       </header>
@@ -403,7 +409,7 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
       <div className="toolbar" role="toolbar" aria-label="Herramientas">
         <div className="segmented" role="group" aria-label="Modo">
           <button aria-pressed={mode === 'place'} onClick={() => setMode('place')} title="Colocar personas">
-            <span aria-hidden>👤</span> <span className="tool-label">Colocar</span>
+            <Icon name="tool-place" /> <span className="tool-label">Colocar</span>
           </button>
           <button aria-pressed={mode === 'mark'} onClick={() => setMode('mark')} title="Marcar casillas descartadas (X)">
             <svg className="ico" aria-hidden>
@@ -412,20 +418,20 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
             <span className="tool-label">Marcar</span>
           </button>
           <button aria-pressed={mode === 'notes'} onClick={() => setMode('notes')} title="Anotar candidatos (N)">
-            <span aria-hidden>✎</span> <span className="tool-label">Notas</span>
+            <Icon name="tool-notes" /> <span className="tool-label">Notas</span>
           </button>
         </div>
         <button onClick={game.undo} disabled={!game.canUndo} title="Deshacer (Ctrl+Z)">
-          <span aria-hidden>↶</span> <span className="tool-label">Deshacer</span>
+          <Icon name="tool-undo" /> <span className="tool-label">Deshacer</span>
         </button>
         {!strict && (
           <button onClick={askHint} disabled={!!solved} title="Te explica el próximo paso de la deducción (resta puntos)">
-            <span aria-hidden>💡</span> <span className="tool-label">Ayuda{attempt?.hintsUsed ? ` (${attempt.hintsUsed})` : ''}</span>
+            <Icon name="tool-help" /> <span className="tool-label">Ayuda{attempt?.hintsUsed ? ` (${attempt.hintsUsed})` : ''}</span>
           </button>
         )}
         <div className="more desktop-only">
           <button className="ghost icon" onClick={() => setMenuOpen((o) => !o)} aria-expanded={menuOpen} aria-label="Más herramientas" title="Más herramientas">
-            ⋯
+            <Icon name="tool-more" />
           </button>
           {menuOpen && (
             <>
@@ -439,7 +445,7 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
                   }}
                   disabled={!game.canRedo}
                 >
-                  <span aria-hidden>↷</span> Rehacer <kbd>Ctrl+Shift+Z</kbd>
+                  <Icon name="tool-redo" /> Rehacer <kbd>Ctrl+Shift+Z</kbd>
                 </button>
                 <button
                   role="menuitem"
@@ -449,7 +455,7 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
                   }}
                   disabled={!!solved}
                 >
-                  <span aria-hidden>🗑</span> Borrar todo
+                  <Icon name="tool-clear" /> Borrar todo
                 </button>
               </div>
             </>
@@ -461,7 +467,8 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
           disabled={!complete || !!solved || stale || sending}
           title={complete ? 'Elegir al culpable' : 'Ubicá a todas las personas para poder acusar'}
         >
-          <span aria-hidden>🔎</span> <span className="tool-label">{sending ? 'Enviando…' : 'Acusar'}</span>
+          <Icon name="tool-accuse" className="ico accuse-ico" />{' '}
+          <span className="tool-label">{sending ? 'Enviando…' : 'Acusar'}</span>
           {!complete && !solved && (
             <span className="count">
               {placedCount}/{p.people.length}
@@ -481,17 +488,15 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
               ) : current ? (
                 <>
                   <button className="ghost icon" onClick={() => cycle(-1)} aria-label="Persona anterior">
-                    ‹
+                    <Icon name="ui-prev" />
                   </button>
-                  <span className="avatar" aria-hidden>
-                    {current.avatar}
-                  </span>
+                  <Monogram person={current} text={short.get(current.id) ?? ''} />
                   <span className="now-text">
                     {mode === 'notes' ? 'Notas de' : board.placements[current.id] ? 'Moviendo a' : 'Colocando a'}{' '}
                     <strong>{current.name}</strong> <span className="clue">· {clueText(p, current)}</span>
                   </span>
                   <button className="ghost icon" onClick={() => cycle(1)} aria-label="Persona siguiente">
-                    ›
+                    <Icon name="ui-next" />
                   </button>
                 </>
               ) : (
@@ -499,20 +504,26 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
               )}
             </p>
           )}
-          <BoardView
-            puzzle={p}
-            board={board}
-            bad={bad}
-            highlight={new Set(hintFocus.map(cellKey))}
-            focusCells={crimeCells ?? previewCells}
-            refCells={previewRefs?.cells}
-            crossed={crossed}
-            selected={selected}
-            onCell={onCell}
-            onDrop={(id, cell) => !solved && game.moveTo(id, cell)}
-            onInspect={setInspected}
-            locked={!!solved}
-          />
+          <figure className="plate">
+            <BoardView
+              puzzle={p}
+              board={board}
+              bad={bad}
+              highlight={new Set(hintFocus.map(cellKey))}
+              focusCells={crimeCells ?? previewCells}
+              refCells={previewRefs?.cells}
+              crossed={crossed}
+              selected={selected}
+              onCell={onCell}
+              onDrop={(id, cell) => !solved && game.moveTo(id, cell)}
+              onInspect={setInspected}
+              locked={!!solved}
+            />
+            <figcaption>
+              <span>Lámina · {p.title}</span>
+              <Icon name="ui-compass" className="compass" />
+            </figcaption>
+          </figure>
           <p className="inspect" aria-live="polite">
             {crimeText ?? previewText ?? inspectText ?? ' '}
           </p>
@@ -590,7 +601,7 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
                     onBlur={() => setHover((v) => (v === x.id ? null : v))}
                     aria-pressed={selected === x.id}
                   >
-                    <span className="avatar">{x.avatar}</span>
+                    <Monogram person={x} text={short.get(x.id) ?? ''} />
                     <span className="who">
                       <span className="name">
                         <kbd>{i + 1}</kbd> {x.name}
@@ -618,7 +629,7 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
                       aria-label={`Ver en el plano dónde puede estar ${x.name}`}
                       title="Ver en el plano"
                     >
-                      👁
+                      <Icon name="ui-eye" />
                     </button>
                     {at && !solved && (
                       <button className="ghost remove" onClick={() => game.remove(x.id)} aria-label={`Quitar a ${x.name} del plano`}>
@@ -638,7 +649,7 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
               <li>{crimeRuleText(p)}</li>
               <li>Nadie puede estar sobre muebles que ocupan la casilla (rayados). Sí sobre sillas, camas y alfombras.</li>
               <li>"Junto a" es una casilla vecina hacia arriba, abajo, izquierda o derecha. "En diagonal" es tocándose por la esquina. "Más al norte" es en una fila más arriba.</li>
-              <li>Pasá el mouse por una pista (o tocá 👁) para ver dónde puede estar esa persona.</li>
+              <li>Pasá el mouse por una pista (o tocá el ojo) para ver dónde puede estar esa persona.</li>
               <li>Atajos: números para elegir persona, X marcar, N notas, flechas para moverte, Ctrl+Z deshace. Podés arrastrar las fichas.</li>
             </ul>
           </details>
@@ -648,13 +659,14 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
       {accusing && <div className="overlay" onClick={() => setAccusing(false)} />}
       {accusing && (
         <dialog open className="modal" aria-label="Acusar">
+          <span className="eyebrow danger">Acusación formal</span>
           <h3>¿Quién lo hizo?</h3>
           <div className="suspects">
             {p.people
               .filter((x) => x.role === 'suspect')
               .map((x) => (
                 <button key={x.id} className="suspect" onClick={() => accuse(x.id)}>
-                  <span className="avatar">{x.avatar}</span> {x.name}
+                  <Monogram person={x} text={short.get(x.id) ?? ''} /> {x.name}
                 </button>
               ))}
           </div>
@@ -673,6 +685,7 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
       {result?.correct && showSolved && !dismissed && <div className="overlay" />}
       {result?.correct && showSolved && !dismissed && (
         <dialog open className="modal solved" aria-label="Caso resuelto">
+          <Icon name="seal" className="seal" />
           <span className="stamp">Caso cerrado</span>
           <h3>¡Lo resolviste!</h3>
           <p>{(p.epilogue ?? '{killer} fue quien lo hizo.').replace('{killer}', name(result.killer))}</p>
@@ -704,7 +717,13 @@ export function Game({ puzzle: p, session, onExit, onSolved, onPlaying }: Props)
                   .catch(() => {})
               }
             >
-              {copied ? '✓ Copiado' : '📋 Copiar resultado'}
+              {copied ? (
+                '✓ Copiado'
+              ) : (
+                <>
+                  <Icon name="ui-copy" /> Copiar resultado
+                </>
+              )}
             </button>
             <button className="primary accent" onClick={onExit}>
               Otro caso

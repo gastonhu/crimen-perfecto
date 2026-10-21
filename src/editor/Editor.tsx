@@ -6,6 +6,7 @@ import { DraftEditor } from './DraftEditor';
 import { DraftList } from './DraftList';
 import { editorBackend as backend } from './instance';
 import './editor.css';
+import { Icon } from '../ui/Icon';
 
 function AuthorSignIn({ onDone }: { onDone: (a: Author) => void }) {
   const [email, setEmail] = useState('');
@@ -82,7 +83,8 @@ export default function Editor({ route }: { route: string }) {
     <section className="ed">
       <div className="ed-bar">
         <span className="eyebrow">
-          ✎ Editor de casos{backend.mode === 'local' && <span className="chip ed-local">Modo local</span>}
+          <Icon name="tool-notes" /> Editor de casos
+          {backend.mode === 'local' && <span className="chip ed-local">Modo local</span>}
         </span>
         <span className="ed-author">{author.email}</span>
         <button

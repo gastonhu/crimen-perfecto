@@ -70,7 +70,7 @@ export function DataStep({ doc, dispatch, analysis, analysisFresh }: StepProps &
           >
             {known.map((t) => (
               <option key={t} value={t}>
-                {THEMES[t].icon} {THEMES[t].name}
+                {THEMES[t].name}
               </option>
             ))}
             <option value="__otro">Otro tema…</option>

@@ -1,4 +1,4 @@
-/* Editor de casos. Solo tokens --cp-* de design/tokens.css; controles de 44px como mínimo. */
+/* Editor de casos (tema Baker Street). Solo tokens --cp-* de design/tokens.css; controles de 44px como mínimo. */
 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
@@ -63,10 +63,12 @@
 .ed-notice .icon { min-height: 32px; min-width: 32px; }
 
 /* Pestañas de pasos */
-.ed-tabs { display: flex; gap: var(--cp-space-1); overflow-x: auto; padding: 3px; border-radius: var(--cp-radius-md); background: var(--cp-surface-2); scrollbar-width: thin; }
-.ed-tab { flex: 1 0 auto; border: 0; background: transparent; min-height: calc(var(--cp-touch) - 2px); padding: 0 var(--cp-space-3); white-space: nowrap; position: relative; }
-.ed-tab[aria-selected='true'] { background: var(--cp-surface); box-shadow: var(--cp-shadow-1); font-weight: 600; }
-.ed-tab-n { font: 600 var(--cp-text-xs) var(--cp-font-mono); color: var(--cp-text-faint); }
+.ed-tabs { display: flex; gap: 0; overflow-x: auto; border-bottom: 2px solid var(--cp-rule); scrollbar-width: thin; }
+/* Pestañas de índice de expediente: la elegida se apoya sobre la regla con el color del papel. */
+.ed-tab { flex: 0 0 auto; margin-bottom: -2px; border: 1px solid transparent; border-bottom: 2px solid transparent; border-radius: var(--cp-radius-md) var(--cp-radius-md) 0 0; background: transparent; min-height: calc(var(--cp-touch) + 2px); padding: 0 var(--cp-space-4); white-space: nowrap; position: relative; color: var(--cp-text-muted); }
+.ed-tab:hover:not(:disabled) { border-color: transparent; color: var(--cp-text); }
+.ed-tab[aria-selected='true'] { background: var(--cp-surface); border-color: var(--cp-rule); border-bottom-color: var(--cp-surface); font-weight: 700; color: var(--cp-text); }
+.ed-tab-n { font: italic 600 14px var(--cp-font-display); color: var(--cp-text-faint); }
 .ed-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .ed-dot.ok { background: var(--cp-success); }
 .ed-dot.warning { background: var(--cp-accent); }
@@ -82,7 +84,7 @@
 .ed-data { grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); }
 .ed-toolrow { gap: var(--cp-space-3); }
 .ed-tip { max-width: 60ch; }
-.ed-panel-box { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: var(--cp-radius-md); padding: var(--cp-space-3) var(--cp-space-4); display: grid; gap: var(--cp-space-2); min-width: 0; }
+.ed-panel-box { background-color: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: var(--cp-radius-lg); padding: var(--cp-space-4) var(--cp-space-5); display: grid; gap: var(--cp-space-2); min-width: 0; }
 .ed-on { background: var(--cp-accent-soft); border-color: var(--cp-accent); }
 .cells.paintable .cell { touch-action: none; cursor: crosshair; }
 
@@ -153,7 +155,7 @@
 .ed-stats div { background: var(--cp-surface-2); border-radius: var(--cp-radius-md); padding: var(--cp-space-2) var(--cp-space-3); min-width: 0; }
 .ed-stats div.ok { background: var(--cp-success-soft); }
 .ed-stats div.bad { background: var(--cp-danger-soft); }
-.ed-stats dt { font-size: 11px; text-transform: uppercase; letter-spacing: var(--cp-tracking-caps); color: var(--cp-text-muted); }
+.ed-stats dt { font: 700 11px/1.4 var(--cp-font-caps); letter-spacing: var(--cp-tracking-caps); color: var(--cp-text-muted); }
 .ed-stats dd { margin: 0; font: 600 var(--cp-text-lg) var(--cp-font-mono); display: grid; }
 .ed-stats dd small { font: 500 var(--cp-text-xs) var(--cp-font-body); color: var(--cp-text-muted); }
 .ed-stats .ed-stat-text { font: 600 var(--cp-text-md) var(--cp-font-body); overflow: hidden; text-overflow: ellipsis; }
@@ -168,7 +170,7 @@
 .ed-clue.victim { border-left: 4px solid var(--cp-danger); }
 .ed-clue.bad { border-color: var(--cp-danger); }
 .ed-clue header { display: flex; align-items: center; gap: var(--cp-space-2); }
-.ed-clue .avatar { font-size: 22px; }
+.ed-clue .medal { width: 34px; height: 34px; font-size: 16px; }
 .ed-clue-text { color: var(--cp-text-muted); font-size: var(--cp-text-sm); font-style: italic; }
 .ed-rules, .ed-facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: var(--cp-text-sm); }
 .ed-rules li, .ed-facts li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cp-space-1); background: var(--cp-surface-2); border-radius: var(--cp-radius-md); padding-left: var(--cp-space-3); }

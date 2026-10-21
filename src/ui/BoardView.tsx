@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { OBJECTS, cellKey, colLabel, objectAt, roomAt, roomIds, roomLabel, sidesWith, type Cell, type Puzzle } from '../engine';
 import { initials } from './initials';
+import { useSettings } from './settings';
 import type { Board } from './useGame';
 
 interface Props {
@@ -60,6 +61,17 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
   const marks = new Set(board.marks);
   const person = (id: string) => p.people.find((x) => x.id === id);
   const short = initials(p.people);
+  // Monograma (inicial en el medallón) salvo que el jugador prefiera ver los avatares del caso.
+  const { avatars } = useSettings();
+  const face = (x: { id: string; avatar: string }) =>
+    avatars && x.avatar ? (
+      <>
+        <span className="avatar">{x.avatar}</span>
+        <span className="initial">{short.get(x.id)}</span>
+      </>
+    ) : (
+      <span className="mono">{short.get(x.id)}</span>
+    );
 
   // Cada casilla dibuja solo su borde superior e izquierdo; el contenedor, el derecho e inferior.
   const run = (c: Cell) => {
@@ -275,8 +287,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
                           startDrag({ personId: here.id, x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, moved: false });
                         }}
                       >
-                        <span className="avatar">{here.avatar}</span>
-                        <span className="initial">{short.get(here.id)}</span>
+                        {face(here)}
                       </span>
                     )}
                     {marked && (
@@ -300,8 +311,7 @@ export function BoardView({ puzzle: p, board, bad, highlight, focusCells, refCel
       </div>
       {dragging && (
         <span className={`token drag-ghost ${dragging.role}`} style={{ left: drag!.x, top: drag!.y }} aria-hidden>
-          <span className="avatar">{dragging.avatar}</span>
-          <span className="initial">{short.get(dragging.id)}</span>
+          {face(dragging)}
         </span>
       )}
     </div>

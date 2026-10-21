@@ -15,7 +15,7 @@ async function register(page: Page, alias: string, pin = '4821') {
   await page.getByLabel('Alias').fill(alias);
   await page.getByLabel('PIN').fill(pin);
   await page.getByRole('button', { name: 'Registrarme' }).click();
-  await expect(page.getByText(`🕵️ ${alias}`)).toBeVisible();
+  await expect(page.locator('header.top .alias-name')).toHaveText(alias);
 }
 
 const person = (page: Page, name: string) =>
@@ -100,7 +100,7 @@ test('salir revoca la sesión y una sesión inválida vuelve al ingreso con avis
 
   await page.getByLabel('PIN').fill('4821');
   await page.getByRole('button', { name: 'Entrar' }).click();
-  await expect(page.getByText(`🕵️ ${alias}`)).toBeVisible();
+  await expect(page.locator('header.top .alias-name')).toHaveText(alias);
   await expect(page.getByText('Elegí un expediente')).toBeVisible();
 });
 

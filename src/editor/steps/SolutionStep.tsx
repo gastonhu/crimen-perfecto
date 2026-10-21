@@ -5,6 +5,8 @@ import { BoardView } from '../../ui/BoardView';
 import { boardOf, boardPuzzle, cellName, crossedBy, IssueList, type StepProps } from '../common';
 import { toPlacement } from '../draft';
 import { draftKiller, type Issue } from '../issues';
+import { Monogram } from '../../ui/Icon';
+import { initials } from '../../ui/initials';
 
 const CRIMES: { id: CrimeRule; label: string; help: string }[] = [
   { id: 'aloneWithVictim', label: 'A solas con la víctima', help: 'El culpable es el único sospechoso en la habitación de la víctima.' },
@@ -13,6 +15,7 @@ const CRIMES: { id: CrimeRule; label: string; help: string }[] = [
 
 export function SolutionStep({ doc, dispatch, issues }: StepProps & { issues: Issue[] }) {
   const d = doc.draft;
+  const short = initials(d.people.map((x) => ({ ...x, name: x.name || x.id })));
   const p = useMemo(() => boardPuzzle(d), [d]);
   const board = useMemo(() => boardOf(d), [d]);
   const sol = useMemo(() => toPlacement(d.solution), [d.solution]);
@@ -86,7 +89,7 @@ export function SolutionStep({ doc, dispatch, issues }: StepProps & { issues: Is
             return (
               <li key={x.id} className={['person', x.role, selected === x.id && 'selected', at && 'placed'].filter(Boolean).join(' ')}>
                 <button onClick={() => setSelected(x.id)} aria-pressed={selected === x.id}>
-                  <span className="avatar">{x.avatar}</span>
+                  <Monogram person={x} text={short.get(x.id) ?? ''} />
                   <span className="who">
                     <span className="name">
                       {x.name || x.id}

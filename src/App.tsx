@@ -7,6 +7,7 @@ import { AuthDialog } from './ui/AuthDialog';
 import { CaseSelect } from './ui/CaseSelect';
 import { ConnectionStatus } from './ui/ConnectionStatus';
 import { Game } from './ui/Game';
+import { Icon } from './ui/Icon';
 import { Leaderboard } from './ui/Leaderboard';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { updateSettings } from './ui/settings';
@@ -128,17 +129,31 @@ export function App() {
     <div className={['app', session && (puzzle || tutorial) && 'in-game', focus && 'focus'].filter(Boolean).join(' ')}>
       <div hidden dangerouslySetInnerHTML={{ __html: sprite }} />
       <header className="top">
-        <h1>Crimen Perfecto</h1>
+        <div className="brand">
+          <Icon name="ui-lens" className="brand-ico" />
+          <span className="brand-text">
+            <h1>Crimen Perfecto</h1>
+            <span className="tagline">Deducción, lápiz y lupa</span>
+          </span>
+        </div>
         <div className="me">
           <ConnectionStatus />
           {focus && (
-            <button className="ghost" onClick={() => setLbOpen((o) => !o)} aria-expanded={lbOpen}>
-              🏆<span className="hide-sm"> Marcador</span>
+            <button className="ghost" onClick={() => setLbOpen((o) => !o)} aria-expanded={lbOpen} aria-label="Marcador">
+              <Icon name="ui-ledger" />
+              <span className="hide-sm">Marcador</span>
             </button>
           )}
-          {session && <span className="alias">🕵️ {session.alias}</span>}
+          {session && (
+            <span className="alias" title={session.alias}>
+              <span className="medal sm" aria-hidden>
+                {session.alias[0]?.toUpperCase()}
+              </span>
+              <span className="alias-name">{session.alias}</span>
+            </span>
+          )}
           <button className="ghost icon" onClick={() => setSettingsOpen(true)} aria-label="Ajustes" title="Ajustes">
-            ⚙
+            <Icon name="ui-gear" />
           </button>
           {session && (
             <button className="ghost" onClick={logout}>

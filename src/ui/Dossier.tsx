@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { describeFact, type Puzzle } from '../engine';
 import { themeInfo } from '../puzzles';
+import { Icon, Monogram } from './Icon';
+import { initials } from './initials';
 
 export function crimeRuleText(p: Puzzle): string {
   return (p.crime ?? 'aloneWithVictim') === 'touchingVictim'
@@ -19,13 +21,14 @@ interface Props {
 export function Dossier({ puzzle: p, busy, onOpen, onBack }: Props) {
   const [strict, setStrict] = useState(false);
   const theme = themeInfo(p.theme);
+  const short = initials(p.people);
   return (
     <section className="dossier card">
       <button className="ghost back" onClick={onBack}>
-        ← Casos
+        <Icon name="ui-back" /> Casos
       </button>
       <span className="eyebrow">
-        {theme ? `${theme.icon} ${theme.name}` : p.theme} · Expediente {p.size}×{p.size} · dificultad {p.difficulty}/5
+        <Icon name={theme.icon} /> {theme.name} · Expediente {p.size}×{p.size} · dificultad {p.difficulty}/5
       </span>
       <h2>{p.title}</h2>
       <p className="story">{p.story}</p>
@@ -34,7 +37,7 @@ export function Dossier({ puzzle: p, busy, onOpen, onBack }: Props) {
       <ul className="dossier-people">
         {p.people.map((x) => (
           <li key={x.id} className={x.role}>
-            <span className="avatar">{x.avatar}</span>
+            <Monogram person={x} text={short.get(x.id) ?? ''} />
             <span>
               {x.name}
               {x.role === 'victim' && <span className="tag danger">Víctima</span>}

@@ -8,13 +8,15 @@ export interface Settings {
   /** Atenuar la fila y la columna de cada persona ubicada. */
   autoCross: boolean;
   theme: 'system' | 'light' | 'dark';
+  /** Mostrar el emoji de cada persona en lugar de su inicial (monograma). */
+  avatars: boolean;
   tutorialSeen: boolean;
   /** Versión de los ajustes guardados (2: autoCross pasó a venir prendido). */
   v?: number;
 }
 
 const KEY = 'crimen-perfecto:settings';
-const DEFAULTS: Settings = { liveErrors: true, autoCross: true, theme: 'system', tutorialSeen: false, v: 2 };
+const DEFAULTS: Settings = { liveErrors: true, autoCross: true, theme: 'system', avatars: false, tutorialSeen: false, v: 2 };
 
 function read(): Settings {
   try {
@@ -31,6 +33,7 @@ let current = read();
 const listeners = new Set<() => void>();
 
 function applyTheme(theme: Settings['theme']) {
+  if (typeof document === 'undefined') return; // tests en Node
   if (theme === 'system') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.setAttribute('data-theme', theme);
 }

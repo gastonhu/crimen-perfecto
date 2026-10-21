@@ -1,6 +1,7 @@
 import type { GlobalRow, PuzzleRow } from '../api';
 import { useConnection } from './ConnectionStatus';
 import { formatTime } from './format';
+import { Icon } from './Icon';
 
 interface Props {
   online: boolean;
@@ -26,7 +27,9 @@ export function Leaderboard({ online, me, global, puzzle, open, onToggle }: Prop
       {open && <div className="overlay lb-overlay" onClick={onToggle} />}
     <aside className={`leaderboard ${open ? 'open' : ''}`} aria-label="Marcador">
       <button className="lb-toggle" onClick={onToggle} aria-expanded={open}>
-        <span>🏆 Marcador</span>
+        <span className="lb-label">
+          <Icon name="ui-ledger" /> Marcador
+        </span>
         <span className="lb-summary">{offline ? 'Sin conexión' : summary || 'Ver ranking'}</span>
         <span aria-hidden>{open ? '▾' : '▴'}</span>
       </button>

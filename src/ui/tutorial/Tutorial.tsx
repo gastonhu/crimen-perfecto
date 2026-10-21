@@ -3,6 +3,8 @@ import { cellKey, clueText, colLabel, unaryDomain, type Cell, type Puzzle } from
 import { BoardView } from '../BoardView';
 import { clueRefs } from '../clueRefs';
 import type { Board } from '../useGame';
+import { Monogram } from '../Icon';
+import { initials } from '../initials';
 
 /** Caso de práctica 3x3 (no se publica ni suma puntos). */
 export const TUTORIAL: Puzzle = {
@@ -34,7 +36,7 @@ const STEPS: StepDef[] = [
     text: 'Cada caso es un plano dividido en habitaciones. Hay que ubicar a cada persona en una casilla: una sola por fila y una sola por columna. Las pistas dicen dónde estaba cada una.',
   },
   {
-    text: 'Vera, la víctima, estaba en una silla, y en el plano hay una sola: la de A1. Las casillas iluminadas son las que cumplen la pista de quien elegiste (en los casos lo ves pasando el mouse por una pista o tocando 👁). Elegí a Vera en la lista y tocá A1.',
+    text: 'Vera, la víctima, estaba en una silla, y en el plano hay una sola: la de A1. Las casillas iluminadas son las que cumplen la pista de quien elegiste (en los casos lo ves pasando el mouse por una pista o tocando el ojo). Elegí a Vera en la lista y tocá A1.',
     expect: { personId: 'vera', cell: { r: 0, c: 0 } },
   },
   {
@@ -53,6 +55,7 @@ const STEPS: StepDef[] = [
 
 export function Tutorial({ onDone }: { onDone: () => void }) {
   const p = TUTORIAL;
+  const short = initials(p.people);
   const [step, setStep] = useState(0);
   const [board, setBoard] = useState<Board>({ placements: {}, marks: [], notes: {} });
   const [selected, setSelected] = useState<string | null>('vera');
@@ -157,7 +160,7 @@ export function Tutorial({ onDone }: { onDone: () => void }) {
                               : setFeedback(`${x.name} no estaba en la sala con Vera.`)
                           }
                         >
-                          <span className="avatar">{x.avatar}</span> {x.name}
+                          <Monogram person={x} text={short.get(x.id) ?? ''} /> {x.name}
                         </button>
                       ))}
                   </div>
@@ -174,7 +177,7 @@ export function Tutorial({ onDone }: { onDone: () => void }) {
                   .join(' ')}
               >
                 <button onClick={() => setSelected(x.id)} aria-pressed={selected === x.id}>
-                  <span className="avatar">{x.avatar}</span>
+                  <Monogram person={x} text={short.get(x.id) ?? ''} />
                   <span className="who">
                     <span className="name">
                       {x.name}

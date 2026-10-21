@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { TECHNIQUE_NAME, colLabel, type Cell, type Explanation, type Puzzle } from '../engine';
+import { Icon } from './Icon';
 
 interface Props {
   puzzle: Puzzle;
@@ -91,7 +92,9 @@ export function HintPanel({ puzzle: p, hint, free, onFocus, onApply, onClose }: 
   return (
     <section className="hint-panel" role="status" aria-label="Ayuda">
       <header>
-        <h3 className="eyebrow">💡 Ayuda</h3>
+        <h3 className="eyebrow">
+          <Icon name="tool-help" /> Ayuda
+        </h3>
         <button className="ghost" onClick={onClose} aria-label="Cerrar ayuda">
           ×
         </button>

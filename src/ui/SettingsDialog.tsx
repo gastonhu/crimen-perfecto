@@ -8,7 +8,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  const toggle = (key: 'liveErrors' | 'autoCross', label: string, help: string) => (
+  const toggle = (key: 'liveErrors' | 'autoCross' | 'avatars', label: string, help: string) => (
     <label className="setting">
       <input type="checkbox" checked={s[key]} onChange={(e) => updateSettings({ [key]: e.target.checked })} />
       <span>
@@ -28,6 +28,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           'Avisa si alguien comparte fila o columna, no cumple su pista o rompe un hecho. En modo estricto nunca se marca.',
         )}
         {toggle('autoCross', 'Apagar fila y columna al ubicar', 'Atenúa la fila y la columna de cada persona ya ubicada.')}
+        {toggle('avatars', 'Mostrar avatares', 'Usa el dibujito de cada persona en lugar de su inicial en el plano y en las listas.')}
         <fieldset className="setting theme">
           <legend>
             <strong>Tema</strong>

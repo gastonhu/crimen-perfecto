@@ -22,6 +22,8 @@ import { factFor, freeObjectsInPlay, ruleKey, toPlacement, toPuzzle } from '../d
 import type { Issue } from '../issues';
 import { fixedRules } from '../state';
 import type { GenerateTask } from '../useEngine';
+import { Monogram } from '../../ui/Icon';
+import { initials } from '../../ui/initials';
 
 const LEVEL_NAME = ['', 'Muy fácil', 'Fácil', 'Media', 'Difícil', 'Muy difícil'];
 
@@ -142,6 +144,7 @@ export function AnalysisPanel({ doc, analysis, analysisFresh, blocked, onStep }:
 
 export function CluesStep({ doc, dispatch, issues, gen, ...ctx }: StepProps & AnalysisCtx & { issues: Issue[]; gen: GenerateTask }) {
   const d = doc.draft;
+  const short = initials(d.people.map((x) => ({ ...x, name: x.name || x.id })));
   const [easy, setEasy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [stepFocus, setStepFocus] = useState<number | null>(null);
@@ -233,9 +236,7 @@ export function CluesStep({ doc, dispatch, issues, gen, ...ctx }: StepProps & An
             return (
               <li key={x.id} className={`card ed-clue ${x.role} ${wrong.has(x.id) ? 'bad' : ''}`}>
                 <header>
-                  <span className="avatar" aria-hidden>
-                    {x.avatar}
-                  </span>
+                  <Monogram person={x} text={short.get(x.id) ?? ''} />
                   <strong>{x.name}</strong>
                   {x.role === 'victim' && <span className="tag danger">Víctima</span>}
                 </header>

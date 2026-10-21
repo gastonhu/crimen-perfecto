@@ -4,6 +4,7 @@ import { THEMES } from '../puzzles';
 import type { DraftSummary, EditorBackend, PublishedSummary, StoredDraft } from './backend';
 import { ConfirmDialog, go, setNotice } from './common';
 import { MAX_SIZE, MIN_SIZE, newDraft, parseImport, type DraftFile } from './draft';
+import { Icon } from '../ui/Icon';
 
 export const newKey = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
@@ -88,7 +89,7 @@ export function DraftList({ backend }: { backend: EditorBackend }) {
             </select>
           </label>
           <button className="primary accent" onClick={() => open(newDraft(size))}>
-            ✎ Nuevo caso
+            <Icon name="tool-notes" /> Nuevo caso
           </button>
         </div>
         <details className="ed-import">
@@ -134,7 +135,7 @@ export function DraftList({ backend }: { backend: EditorBackend }) {
                   </span>
                 </a>
                 <button className="ghost icon" aria-label={`Borrar el borrador ${d.title || d.id}`} title="Borrar" onClick={() => setConfirm({ kind: 'draft', id: d.key, title: d.title || d.id })}>
-                  🗑
+                  <Icon name="tool-clear" />
                 </button>
               </li>
             ))}
@@ -155,7 +156,7 @@ export function DraftList({ backend }: { backend: EditorBackend }) {
                 <button className="ed-item-main" onClick={() => openPublished(p.id)}>
                   <span className="case-title">{p.title}</span>
                   <span className="ed-item-meta">
-                    <span className="chip">{p.size}×{p.size}</span> {THEMES[p.theme]?.icon ?? '📁'} <code>{p.id}</code> · dificultad {p.difficulty} ·{' '}
+                    <span className="chip">{p.size}×{p.size}</span> <Icon name={THEMES[p.theme]?.icon ?? 'theme-other'} /> <code>{p.id}</code> · dificultad {p.difficulty} ·{' '}
                     {when(p.publishedAt)}
                   </span>
                 </button>
