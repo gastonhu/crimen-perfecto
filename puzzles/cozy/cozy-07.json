@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 2,
+  "id": "cozy-07",
+  "theme": "cozy",
+  "title": "Cosecha tardía",
+  "size": 7,
+  "difficulty": 3,
+  "story": "Fiesta de la vendimia en una bodega familiar de los Valles Calchaquíes. Octavio Lund, el comprador extranjero que venía a cerrar la venta de la finca, bajó a la cava de barricas a probar el torrontés de reserva y no volvió a subir. Seis personas tenían motivos para que la finca no cambiara de manos.",
+  "epilogue": "{killer} eligió la barrica correcta y el momento justo. Pero en los Valles, el viento zonda siempre trae noticias.",
+  "rooms": [
+    "VVVVTTT",
+    "VVVVTTT",
+    "BBCCTTT",
+    "BBCCDDD",
+    "BBCCDDD",
+    "GGGCDDD",
+    "GGGOOOO"
+  ],
+  "roomNames": {
+    "V": "el viñedo",
+    "T": "la sala de degustación",
+    "B": "la cava de barricas",
+    "C": "el patio",
+    "D": "la casona",
+    "G": "el galpón",
+    "O": "la galería"
+  },
+  "objects": [
+    "PP.P.CT",
+    "P.P.T.C",
+    "S.T..TC",
+    "C.P.S.B",
+    "S..T.V.",
+    "T.S.C..",
+    "T...C.P"
+  ],
+  "people": [
+    {
+      "id": "octavio",
+      "name": "Octavio Lund",
+      "role": "victim",
+      "avatar": "🍷",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "B"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "amparo",
+      "name": "Doña Amparo",
+      "role": "suspect",
+      "avatar": "👑",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "D"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "facundo",
+      "name": "Facundo",
+      "role": "suspect",
+      "avatar": "🐎",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "O"
+          ],
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "lourdes",
+      "name": "Lourdes",
+      "role": "suspect",
+      "avatar": "🧪",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "col",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "id": "chaco",
+      "name": "Chaco",
+      "role": "suspect",
+      "avatar": "🍇",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "P"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "isabela",
+      "name": "Isabela",
+      "role": "suspect",
+      "avatar": "👃",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "col",
+            6
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ulises",
+      "name": "Ulises",
+      "role": "suspect",
+      "avatar": "📸",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "row",
+            3
+          ]
+        ]
+      }
+    }
+  ]
+}

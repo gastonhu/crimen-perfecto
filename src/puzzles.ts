@@ -10,6 +10,7 @@ export const THEMES: Record<string, { name: string; icon: string }> = {
   tren: { name: 'Tren nocturno', icon: '🚂' },
   estancia: { name: 'Estancia tucumana', icon: '🐎' },
   datacenter: { name: 'Datacenter hackeado', icon: '💾' },
+  cozy: { name: 'Misterios acogedores', icon: '🫖' },
 };
 
 /** Nombre e ícono de un tema, también para temas nuevos creados desde el editor. */

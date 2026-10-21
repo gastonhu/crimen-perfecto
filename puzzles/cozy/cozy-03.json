@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 2,
+  "id": "cozy-03",
+  "theme": "cozy",
+  "title": "Una taza de más",
+  "size": 6,
+  "difficulty": 4,
+  "story": "Concurso anual de scones en la casa de té La Tetera de Porcelana. Doña Eulalia, presidenta del jurado y de casi todas las comisiones del pueblo, probó el té de las cinco y no llegó a dar su veredicto. Nadie salió de la casa desde entonces.",
+  "epilogue": "{killer} sirvió la última taza con una sonrisa. Pero las hojas de té, dicen, siempre cuentan lo que pasó.",
+  "rooms": [
+    "JJSSSS",
+    "JJSSSS",
+    "JJSSSK",
+    "HHDDKK",
+    "HHDDKK",
+    "HHHDKK"
+  ],
+  "roomNames": {
+    "J": "el jardín de invierno",
+    "S": "el salón de té",
+    "K": "la cocina",
+    "D": "la despensa",
+    "H": "la tienda de hebras"
+  },
+  "objects": [
+    ".PC.T.",
+    "P..C.T",
+    ".C.T..",
+    "S..S..",
+    ".S.ST.",
+    "S..C.T"
+  ],
+  "people": [
+    {
+      "id": "eulalia",
+      "name": "Doña Eulalia",
+      "role": "victim",
+      "avatar": "👒",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "S"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "brigida",
+      "name": "Brígida",
+      "role": "suspect",
+      "avatar": "🫖",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "K"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ofelia",
+      "name": "Ofelia",
+      "role": "suspect",
+      "avatar": "🧁",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "row",
+            3
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ramon",
+      "name": "Ramón",
+      "role": "suspect",
+      "avatar": "🎩",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "touching",
+            "cata"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "cata",
+      "name": "Cata",
+      "role": "suspect",
+      "avatar": "💁‍♀️",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "col",
+            3
+          ]
+        ]
+      }
+    },
+    {
+      "id": "benito",
+      "name": "Benito",
+      "role": "suspect",
+      "avatar": "🌹",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "P"
+          ]
+        ]
+      }
+    }
+  ]
+}

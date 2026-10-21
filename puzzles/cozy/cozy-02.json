@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 2,
+  "id": "cozy-02",
+  "theme": "cozy",
+  "title": "Letra muerta",
+  "size": 6,
+  "difficulty": 3,
+  "story": "Tarde de lluvia y firma de libros en la librería Ex Libris. El novelista Leopoldo Brandán iba a presentar su esperado final de saga, pero el capítulo que nadie leyó fue el suyo. Solo el gato de la librería vio todo, y no piensa hablar.",
+  "epilogue": "{killer} conocía el final antes que nadie, y no le gustó. El gato, desde el estante, sigue mirando con desaprobación.",
+  "rooms": [
+    "SSSSII",
+    "SSSSII",
+    "RRCCII",
+    "RRCCCC",
+    "TTTCCC",
+    "TTTCCC"
+  ],
+  "roomNames": {
+    "S": "la sala principal",
+    "I": "la sección infantil",
+    "R": "el rincón de lectura",
+    "C": "el café",
+    "T": "la trastienda"
+  },
+  "objects": [
+    "S.SC.P",
+    "..T.R.",
+    "C..T.S",
+    ".R.C..",
+    "S...CT",
+    ".T..P."
+  ],
+  "people": [
+    {
+      "id": "leopoldo",
+      "name": "Leopoldo Brandán",
+      "role": "victim",
+      "avatar": "✒️",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "R"
+          ],
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "margarita",
+      "name": "Margarita",
+      "role": "suspect",
+      "avatar": "📚",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "S"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "joaquin",
+      "name": "Joaquín",
+      "role": "suspect",
+      "avatar": "💼",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "S"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "fermina",
+      "name": "Fermina",
+      "role": "suspect",
+      "avatar": "🧐",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "lalo",
+      "name": "Lalo",
+      "role": "suspect",
+      "avatar": "🤓",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "row",
+            4
+          ]
+        ]
+      }
+    },
+    {
+      "id": "paz",
+      "name": "Paz",
+      "role": "suspect",
+      "avatar": "📋",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "T"
+          ]
+        ]
+      }
+    }
+  ]
+}

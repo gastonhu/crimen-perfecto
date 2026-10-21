@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 2,
+  "id": "cozy-04",
+  "theme": "cozy",
+  "title": "Punto final",
+  "size": 6,
+  "difficulty": 3,
+  "story": "Todos los jueves, el club de tejido se junta en la mercería El Ovillo. Este jueves, Don Cosme, el dueño del edificio, vino a anunciar que lo vendía. No terminó la frase: lo encontraron entre las lanas, enredado en su último anuncio.",
+  "epilogue": "{killer} tejió su coartada punto por punto. Pero un solo punto mal hecho desarma toda la trama.",
+  "rooms": [
+    "TTTAAA",
+    "TTTAAA",
+    "CCTAAA",
+    "CCBBDD",
+    "CCBBDD",
+    "CCBBDD"
+  ],
+  "roomNames": {
+    "T": "el mostrador",
+    "A": "el salón del club",
+    "C": "el patio",
+    "B": "el cuarto de costura",
+    "D": "el depósito de lanas"
+  },
+  "objects": [
+    "S.TC.C",
+    ".S..T.",
+    "P...R.",
+    ".PC.SS",
+    "...T.S",
+    "P.S..."
+  ],
+  "people": [
+    {
+      "id": "cosme",
+      "name": "Don Cosme",
+      "role": "victim",
+      "avatar": "🏚️",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "D"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "nelly",
+      "name": "Nelly",
+      "role": "suspect",
+      "avatar": "🧶",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "col",
+            4
+          ]
+        ]
+      }
+    },
+    {
+      "id": "porota",
+      "name": "Porota",
+      "role": "suspect",
+      "avatar": "👵",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "S"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "amalia",
+      "name": "Amalia",
+      "role": "suspect",
+      "avatar": "🪡",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "lucrecia",
+      "name": "Lucrecia",
+      "role": "suspect",
+      "avatar": "✂️",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "german",
+      "name": "Germán",
+      "role": "suspect",
+      "avatar": "📦",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "southOf",
+            "cosme"
+          ]
+        ]
+      }
+    }
+  ]
+}

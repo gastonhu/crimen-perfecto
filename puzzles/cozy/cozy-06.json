@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 2,
+  "id": "cozy-06",
+  "theme": "cozy",
+  "title": "Cartón lleno",
+  "size": 7,
+  "difficulty": 3,
+  "story": "Noche de bingo en el hogar Los Aromos. Don Evaristo, el administrador que quería cerrar el lugar, se retiró a la enfermería antes del último cartón. Cuando cantaron bingo, él ya no respondía. Los residentes juran que estaban jugando, pero alguien hizo trampa.",
+  "epilogue": "{killer} cantó su jugada a tiempo. Lástima que en Los Aromos todos tienen mucho tiempo libre para observar.",
+  "rooms": [
+    "SSSSJJJ",
+    "SSSSJJJ",
+    "SSSSEEJ",
+    "CCPPEEJ",
+    "CCPPEEK",
+    "CCPPKKK",
+    "HHPPKKK"
+  ],
+  "roomNames": {
+    "S": "el salón de bingo",
+    "J": "el jardín",
+    "E": "la enfermería",
+    "C": "el comedor",
+    "P": "el pasillo",
+    "K": "la cocina",
+    "H": "la habitación 3"
+  },
+  "objects": [
+    "TC.T.P.",
+    ".T.C.P.",
+    "T.C...P",
+    "T..P.BP",
+    ".T..SB.",
+    "C.R..T.",
+    "BV.R.S."
+  ],
+  "people": [
+    {
+      "id": "evaristo",
+      "name": "Don Evaristo",
+      "role": "victim",
+      "avatar": "📑",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "B"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "pocha",
+      "name": "Doña Pocha",
+      "role": "suspect",
+      "avatar": "🎱",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "sameRoomAs",
+            "gladys"
+          ],
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "lino",
+      "name": "Don Lino",
+      "role": "suspect",
+      "avatar": "🕵️",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "J"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "mirta",
+      "name": "Mirta",
+      "role": "suspect",
+      "avatar": "🩺",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "P"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "gladys",
+      "name": "Gladys",
+      "role": "suspect",
+      "avatar": "🎤",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "col",
+            3
+          ]
+        ]
+      }
+    },
+    {
+      "id": "tito",
+      "name": "Tito",
+      "role": "suspect",
+      "avatar": "🧢",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "R"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "rosaura",
+      "name": "Rosaura",
+      "role": "suspect",
+      "avatar": "🥘",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    }
+  ]
+}

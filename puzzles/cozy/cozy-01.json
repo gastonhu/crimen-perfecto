@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 2,
+  "id": "cozy-01",
+  "theme": "cozy",
+  "title": "Con las manos en la masa",
+  "size": 5,
+  "difficulty": 3,
+  "story": "Villa Remanso se despierta con olor a medialunas. Pero esta mañana, en la panadería La Espiga, el temido crítico gastronómico Don Anselmo no llegó a probar nada: lo encontraron sin vida antes de que abrieran las persianas. Cuatro personas ya estaban adentro.",
+  "epilogue": "{killer} no soportaba otra reseña venenosa. Pero en un pueblo chico todo se sabe, y la harina deja huellas.",
+  "rooms": [
+    "OOOMM",
+    "OOOMM",
+    "DDPMM",
+    "DDPPP",
+    "DDPPP"
+  ],
+  "roomNames": {
+    "O": "el obrador",
+    "M": "el salón de ventas",
+    "D": "el depósito de harina",
+    "P": "el patio"
+  },
+  "objects": [
+    "T...C",
+    ".C.T.",
+    "S....",
+    ".CP..",
+    "...RP"
+  ],
+  "people": [
+    {
+      "id": "anselmo",
+      "name": "Don Anselmo",
+      "role": "victim",
+      "avatar": "🧐",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "O"
+          ],
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "rosa",
+      "name": "Rosa",
+      "role": "suspect",
+      "avatar": "👩‍🍳",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "notInRoom",
+            "M"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ivan",
+      "name": "Iván",
+      "role": "suspect",
+      "avatar": "🥐",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "M"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "chela",
+      "name": "Chela",
+      "role": "suspect",
+      "avatar": "👵",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "inRoom",
+            "D"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "nico",
+      "name": "Nico",
+      "role": "suspect",
+      "avatar": "🚲",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "R"
+          ]
+        ]
+      }
+    }
+  ]
+}

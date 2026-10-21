@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 2,
+  "id": "cozy-05",
+  "theme": "cozy",
+  "title": "Marea baja",
+  "size": 7,
+  "difficulty": 3,
+  "story": "Fuera de temporada, la hostería La Gaviota tiene solo un huésped: el misterioso señor Wenceslao Ibarra, que llegó sin equipaje y preguntando por terrenos frente al mar. Al bajar la marea lo encuentran muerto en el cuarto Faro. La tormenta cortó el único camino al pueblo.",
+  "epilogue": "{killer} creyó que el mar se llevaría el secreto. Pero con la marea baja, todo lo enterrado sale a la superficie.",
+  "rooms": [
+    "AAABBCC",
+    "AAABBCC",
+    "DDEEECC",
+    "DDEEEFF",
+    "GGEEEFF",
+    "GGHHHFF",
+    "GGHHHFF"
+  ],
+  "roomNames": {
+    "A": "el cuarto Faro",
+    "B": "el baño compartido",
+    "C": "el cuarto Ancla",
+    "D": "la recepción",
+    "E": "el comedor",
+    "F": "la galería al mar",
+    "G": "la cocina",
+    "H": "la sala de estar"
+  },
+  "objects": [
+    "B..S.B.",
+    ".B.P..T",
+    "T.C..B.",
+    "S..CT.P",
+    ".T.T.C.",
+    "S.R.V..",
+    "..C.RP."
+  ],
+  "people": [
+    {
+      "id": "wenceslao",
+      "name": "Wenceslao Ibarra",
+      "role": "victim",
+      "avatar": "🕴️",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "westOf",
+            "celeste"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "marina",
+      "name": "Marina",
+      "role": "suspect",
+      "avatar": "🐚",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "R"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "tobias",
+      "name": "Tobías",
+      "role": "suspect",
+      "avatar": "🎣",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "row",
+            6
+          ]
+        ]
+      }
+    },
+    {
+      "id": "celeste",
+      "name": "Celeste",
+      "role": "suspect",
+      "avatar": "🎨",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "S"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "hector",
+      "name": "Héctor",
+      "role": "suspect",
+      "avatar": "🏠",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "onObject",
+            "C"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "dalia",
+      "name": "Dalia",
+      "role": "suspect",
+      "avatar": "📷",
+      "gender": "f",
+      "clue": {
+        "rules": [
+          [
+            "col",
+            6
+          ]
+        ]
+      }
+    },
+    {
+      "id": "fausto",
+      "name": "Fausto",
+      "role": "suspect",
+      "avatar": "🍲",
+      "gender": "m",
+      "clue": {
+        "rules": [
+          [
+            "adjacentTo",
+            "S"
+          ]
+        ]
+      }
+    }
+  ]
+}
