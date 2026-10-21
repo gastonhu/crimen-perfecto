@@ -143,7 +143,10 @@ test('sin conexión: lo indica, guarda en el dispositivo y reintenta la acusaci�
   await page.locator(`[data-cell="${HOTEL.Ana}"]`).click();
   await expect(page.locator('.save-chip')).toHaveText('Sin conexión · guardado en este dispositivo', { timeout: 15_000 });
   await expect(page.locator('header.top').getByText('Sin conexión')).toBeVisible();
+  // Durante la partida el marcador se abre desde el encabezado.
+  await page.locator('header.top').getByRole('button', { name: /Marcador/ }).click();
   await expect(page.getByRole('complementary', { name: 'Marcador' })).toContainText('Sin conexión con el servidor');
+  await page.keyboard.press('Escape');
 
   // Vuelve la conexión, pero el envío falla dos veces más: se reintenta solo y termina bien.
   s.offline = false;

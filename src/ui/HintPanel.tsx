@@ -4,6 +4,8 @@ import { TECHNIQUE_NAME, colLabel, type Cell, type Explanation, type Puzzle } fr
 interface Props {
   puzzle: Puzzle;
   hint: Explanation;
+  /** La ayuda no se cobró (el error ya estaba marcado en el plano). */
+  free?: boolean;
   /** Resalta en el plano las casillas del paso que se está mostrando. */
   onFocus: (cells: Cell[]) => void;
   onApply: (personId: string, cell: Cell) => void;
@@ -13,13 +15,18 @@ interface Props {
 const label = (c: Cell) => `${colLabel(c.c)}${c.r + 1}`;
 
 /** Muestra la deducción de a un paso, para que el jugador pueda cortar apenas lo entienda. */
-export function HintPanel({ puzzle: p, hint, onFocus, onApply, onClose }: Props) {
+export function HintPanel({ puzzle: p, hint, free, onFocus, onApply, onClose }: Props) {
   const [shown, setShown] = useState(1);
   const name = (id: string) => p.people.find((x) => x.id === id)?.name ?? id;
 
   let body: React.ReactNode;
   if (hint.kind === 'wrong') {
-    body = <p>Algo no cuadra con {name(hint.personId)}. Revisá su ubicación contra su pista y las de los demás.</p>;
+    body = (
+      <p>
+        Algo no cuadra con {name(hint.personId)}. Revisá su ubicación contra su pista y las de los demás.
+        {free && ' Como ya estaba marcado en rojo, esta ayuda no se cuenta.'}
+      </p>
+    );
   } else if (hint.kind === 'none') {
     body = <p>Ya ubicaste a todos: es hora de acusar.</p>;
   } else if (hint.kind === 'reveal') {

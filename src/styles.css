@@ -337,3 +337,68 @@ button.big { min-height: 52px; padding: 0 var(--cp-space-5); font-size: var(--cp
 /* Acceso al editor de casos (sus estilos viven en src/editor/editor.css, que se carga con el editor). */
 .editor-link { display: inline-flex; align-items: center; min-height: var(--cp-touch); margin-left: var(--cp-space-3); color: var(--cp-accent-text); font-size: var(--cp-text-sm); font-weight: 600; }
 .layout.editor-layout { grid-template-columns: minmax(0, 1fr); }
+
+/* ---------- Partida en foco: el plano manda ---------- */
+/* Durante la partida el marcador se abre desde el botón 🏆 del encabezado. */
+.app.focus .layout { grid-template-columns: minmax(0, 1fr); }
+.app.focus main { width: 100%; max-width: 1180px; margin: 0 auto; }
+.app.focus .leaderboard:not(.open) { display: none; }
+@media (min-width: 768px) {
+  .app.focus .leaderboard.open { position: fixed; top: 64px; right: var(--cp-gutter); width: var(--cp-scoreboard-w); max-height: calc(100vh - 88px); overflow: auto; z-index: 22; box-shadow: var(--cp-shadow-3); }
+  .app.focus .lb-overlay { display: block; z-index: 21; }
+  .app.focus .board { --cell: clamp(var(--cp-cell-min), calc(560px / var(--n)), 96px); }
+  .app.focus .game-body { grid-template-columns: auto minmax(300px, 1fr); }
+}
+
+/* Barra: modos, deshacer, ayuda y más a la izquierda; acusar a la derecha. */
+.toolbar { align-items: center; }
+.toolbar .accuse { margin-left: auto; }
+.accuse .count { font: 600 11px var(--cp-font-mono); padding: 1px 6px; border-radius: var(--cp-radius-pill); background: var(--cp-surface-2); }
+.more { position: relative; }
+.more > button { font-size: 22px; }
+.menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 23; min-width: 240px; display: grid; gap: 2px; padding: var(--cp-space-1); background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: var(--cp-radius-md); box-shadow: var(--cp-shadow-3); }
+.menu button { justify-content: flex-start; border: 0; background: transparent; }
+.menu button:hover:not(:disabled) { background: var(--cp-surface-2); }
+.menu kbd { margin-left: auto; }
+.menu-backdrop { position: fixed; inset: 0; z-index: 22; }
+
+/* A quién estás colocando: siempre arriba del plano, con alto fijo para que el plano no se mueva. */
+.now { display: flex; align-items: center; gap: var(--cp-space-2); height: 56px; padding: 0 var(--cp-space-3); border: 1px solid var(--cp-accent); border-radius: var(--cp-radius-md); background: var(--cp-surface); font-size: var(--cp-text-sm); }
+.now.mark { border-color: var(--cp-border-strong); }
+.now .avatar { font-size: 24px; line-height: 1; flex: none; }
+.now > span:last-child, .now .now-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1; min-width: 0; }
+.now > button.icon { min-height: 40px; min-width: 32px; font-size: 24px; flex: none; color: var(--cp-text-muted); }
+.now:has(> button) { padding: 0 var(--cp-space-1); }
+.now .clue { color: var(--cp-text-muted); }
+
+/* Filas y columnas ocupadas: casillas apagadas, sin color (el rayado queda solo para los muebles que bloquean). */
+.cell.crossed { filter: saturate(.15) brightness(.7); }
+.cell.crossed::after { display: none; }
+.cell.crossed.dimmed::after { display: block; }
+
+/* Avisos y ayuda: al costado del plano; en pantallas angostas, flotando abajo. */
+.notices { display: grid; gap: var(--cp-space-2); }
+.notices .msg, .notices .hint-panel { margin: 0; }
+@media (max-width: 900px) {
+  .notices { position: fixed; left: var(--cp-space-2); right: var(--cp-space-2); bottom: var(--cp-space-2); z-index: 16; max-height: 45vh; overflow: auto; }
+  .notices > * { box-shadow: var(--cp-shadow-3); }
+  .notices .hint-panel, .notices .msg { background: linear-gradient(var(--cp-accent-soft), var(--cp-accent-soft)), var(--cp-surface); border: 1px solid var(--cp-accent); }
+  .notices .msg.error { background: linear-gradient(var(--cp-danger-soft), var(--cp-danger-soft)), var(--cp-surface); border-color: var(--cp-danger); }
+}
+@media (max-width: 767px) {
+  .notices { bottom: calc(68px + env(safe-area-inset-bottom)); }
+  .app.focus .layout { padding-bottom: 80px; }
+  .toolbar .accuse { margin-left: 0; position: relative; }
+  .toolbar .accuse .count { position: absolute; top: 3px; right: 4px; padding: 0 4px; font-size: 10px; }
+  .now { height: 52px; }
+}
+/* Los atajos de teclado no tienen sentido en pantallas táctiles. */
+@media (hover: none) { .person kbd { display: none; } }
+/* Los chips del encabezado (guardado, estricto) no cambian el alto: el plano no salta al guardar. */
+.game-head .eyebrow { display: flex; align-items: center; flex-wrap: wrap; gap: 0 var(--cp-space-2); min-height: 20px; }
+.game-head .eyebrow .chip { padding-block: 0; line-height: 18px; margin-left: 0; }
+@media (max-width: 767px) {
+  .me { min-width: 0; gap: var(--cp-space-1); }
+  .me .alias { min-width: 0; max-width: 34vw; overflow: hidden; text-overflow: ellipsis; }
+  .app.focus .me .alias { display: none; }
+}

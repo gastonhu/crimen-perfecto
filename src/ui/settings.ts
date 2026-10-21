@@ -9,14 +9,19 @@ export interface Settings {
   autoCross: boolean;
   theme: 'system' | 'light' | 'dark';
   tutorialSeen: boolean;
+  /** Versión de los ajustes guardados (2: autoCross pasó a venir prendido). */
+  v?: number;
 }
 
 const KEY = 'crimen-perfecto:settings';
-const DEFAULTS: Settings = { liveErrors: true, autoCross: false, theme: 'system', tutorialSeen: false };
+const DEFAULTS: Settings = { liveErrors: true, autoCross: true, theme: 'system', tutorialSeen: false, v: 2 };
 
 function read(): Settings {
   try {
-    return { ...DEFAULTS, ...(JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Settings>) };
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Settings>;
+    // Antes de la v2 se guardaba autoCross: false aunque nadie lo hubiera elegido: vuelve al valor por defecto.
+    if (!saved.v) delete saved.autoCross;
+    return { ...DEFAULTS, ...saved, v: 2 };
   } catch {
     return DEFAULTS;
   }

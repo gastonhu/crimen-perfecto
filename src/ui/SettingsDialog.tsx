@@ -27,7 +27,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           'Marcar errores al instante',
           'Avisa si alguien comparte fila o columna, no cumple su pista o rompe un hecho. En modo estricto nunca se marca.',
         )}
-        {toggle('autoCross', 'Tachar fila y columna al ubicar', 'Atenúa la fila y la columna de cada persona ya ubicada.')}
+        {toggle('autoCross', 'Apagar fila y columna al ubicar', 'Atenúa la fila y la columna de cada persona ya ubicada.')}
         <fieldset className="setting theme">
           <legend>
             <strong>Tema</strong>

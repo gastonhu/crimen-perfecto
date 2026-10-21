@@ -39,6 +39,8 @@ export function App() {
   const [lbOpen, setLbOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tutorial, setTutorial] = useState(false);
+  // Partida en curso (sin resolver): el marcador se guarda detrás de un botón para dejarle lugar al plano.
+  const [playing, setPlaying] = useState(false);
   const [editor, setEditor] = useState<string | null>(editorRoute);
   // Aviso en la pantalla de ingreso cuando el servidor rechazó la sesión (venció o se cerró).
   const [expired, setExpired] = useState<string | null>(null);
@@ -78,6 +80,13 @@ export function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  useEffect(() => {
+    if (!lbOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setLbOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lbOpen]);
+
   const forget = () => {
     setSession(null);
     try {
@@ -113,13 +122,20 @@ export function App() {
     setPuzzle(null);
   };
 
+  const focus = editor === null && !!session && (tutorial || (!!puzzle && playing));
+
   return (
-    <div className={`app ${session && (puzzle || tutorial) ? 'in-game' : ''}`}>
+    <div className={['app', session && (puzzle || tutorial) && 'in-game', focus && 'focus'].filter(Boolean).join(' ')}>
       <div hidden dangerouslySetInnerHTML={{ __html: sprite }} />
       <header className="top">
         <h1>Crimen Perfecto</h1>
         <div className="me">
           <ConnectionStatus />
+          {focus && (
+            <button className="ghost" onClick={() => setLbOpen((o) => !o)} aria-expanded={lbOpen}>
+              🏆<span className="hide-sm"> Marcador</span>
+            </button>
+          )}
           {session && <span className="alias">🕵️ {session.alias}</span>}
           <button className="ghost icon" onClick={() => setSettingsOpen(true)} aria-label="Ajustes" title="Ajustes">
             ⚙
@@ -153,7 +169,14 @@ export function App() {
           ) : puzzleId && !puzzle && puzzles.loading ? (
             <p className="note">Abriendo el archivo de casos…</p>
           ) : puzzle ? (
-            <Game key={puzzle.id} puzzle={puzzle} session={session} onExit={() => setPuzzle(null)} onSolved={refresh} />
+            <Game
+              key={puzzle.id}
+              puzzle={puzzle}
+              session={session}
+              onExit={() => setPuzzle(null)}
+              onSolved={refresh}
+              onPlaying={setPlaying}
+            />
           ) : (
             <CaseSelect solved={solved} onPick={setPuzzle} onTutorial={() => setTutorial(true)} />
           )}

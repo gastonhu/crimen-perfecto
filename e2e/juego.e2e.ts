@@ -34,6 +34,10 @@ test('registro → expediente del hotel → resolverlo → puntaje y marcador', 
   // Expediente: el reloj arranca recién al abrir el caso.
   await page.getByRole('button', { name: /Abrir el caso/ }).click();
   await expect(page.getByRole('grid', { name: 'Plano de la escena' })).toBeVisible();
+  // En partida el marcador no ocupa lugar, y Acusar dice cuánto falta.
+  await expect(page.getByRole('complementary', { name: 'Marcador' })).toBeHidden();
+  await expect(page.getByRole('button', { name: /Acusar/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /Acusar/ })).toContainText('0/5');
 
   for (const [name, rc] of Object.entries(HOTEL)) {
     await person(page, name).locator(':scope > button').click();
@@ -122,4 +126,23 @@ test('tutorial completo', async ({ page }) => {
   await page.getByRole('button', { name: 'Ir a los casos' }).click();
   await expect(page.getByText('Elegí un expediente')).toBeVisible();
   await expect(page.getByText('¿Primera vez?')).toHaveCount(0);
+});
+
+test('la franja dice a quién colocás y al ubicar pasa a la siguiente persona de la lista', async ({ page }) => {
+  await register(page, `sel_${Date.now() % 1e8}`);
+  await page.getByRole('button', { name: 'Ya sé jugar' }).click();
+  await openHotel(page);
+  await page.getByRole('button', { name: /Abrir el caso/ }).click();
+  const now = page.locator('.now');
+  await expect(now).toContainText('Colocando a Don Ruiz');
+
+  // Bruno (3.º) → la siguiente sin ubicar es Clara (4.ª), no la primera de la lista.
+  await person(page, 'Bruno').locator(':scope > button').click();
+  await cell(page, HOTEL.Bruno).click();
+  await expect(now).toContainText('Colocando a Clara');
+  await now.getByRole('button', { name: 'Persona anterior' }).click();
+  await expect(now).toContainText('Moviendo a Bruno');
+  await now.getByRole('button', { name: 'Persona siguiente' }).click();
+  await page.getByRole('button', { name: /Marcar/ }).click();
+  await expect(now).toContainText('Marcar');
 });
