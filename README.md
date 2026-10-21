@@ -61,6 +61,19 @@ localStorage del navegador donde se creó.
    *Settings → Secrets and variables → Actions → Variables* cargá `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
 4. Cada push a `main` corre los tests y el validador y publica en `https://<usuario>.github.io/crimen-perfecto/`.
 
+## Autores y editor
+
+El editor vive en la app (`#editor`, link "✎ Crear un caso"). Con Supabase configurado, los autores ingresan con
+Supabase Auth (email + contraseña) y publican directo a la base: el caso queda jugable al instante, sin deploy.
+
+```bash
+npm run add-author -- autor@ejemplo.com            # crea la cuenta (pide la contraseña sin mostrarla) y la hace autor
+npm run add-author -- --remove autor@ejemplo.com   # le saca el permiso de autor
+```
+
+En Supabase, desactivá el registro público (*Authentication → Sign In / Providers → Allow new users to sign up*): las
+cuentas de autor se crean solo con ese script. Las funciones `cp_author_*` exigen además estar en `cp_authors`.
+
 ## Seguridad
 
 - Las soluciones viven en la tabla privada `cp_solutions` y se verifican en el servidor. Ojo: alguien con su propio

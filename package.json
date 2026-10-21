@@ -16,7 +16,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "add-author": "tsx scripts/add-author.ts"
   },
   "dependencies": {
     "react": "^19.3.1",
